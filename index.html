@@ -1,548 +1,247 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">  
-<head>  
-    <meta charset="UTF-8">  
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
-    <title>تطبيق مصاريفي - تتبع النفقات اليومية</title>  
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>  
-    <script src="https://unpkg.com/lucide@latest"></script>  
-    <style>  
-        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; color: #333; direction: rtl; }  
-        .main-container { max-width: 600px; margin: 0 auto; padding: 1rem; background-color: #fff; border-radius: 1.5rem; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08); min-height: 100vh; display: flex; flex-direction: column; animation: fadeIn 0.5s ease-out; }  
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }  
-        .tab-button { padding: 0.85rem 1.75rem; border-radius: 1.25rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease-in-out; background-color: #e0e7ff; color: #4f46e5; text-align: center; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); }  
-        .tab-button.active { background-color: #4f46e5; color: #fff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); transform: translateY(-2px); }  
-        .tab-button:hover:not(.active) { background-color: #c7d2fe; transform: translateY(-1px); }  
-        .tab-content { display: none; padding-top: 1rem; opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out; }  
-        .tab-content.active { display: block; opacity: 1; transform: translateY(0); }  
-        input[type="text"], input[type="number"], input[type="date"] { padding: 0.85rem 1.25rem; border: 1px solid #cbd5e1; border-radius: 1rem; font-size: 1rem; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; text-align: right; background-color: #fbfdff; }  
-        input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25); }  
-        button { padding: 0.85rem 1.75rem; border-radius: 1.25rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s; background-color: #4f46e5; color: #fff; border: none; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); text-align: center; }  
-        button:hover { background-color: #4338ca; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); }  
-        .secondary-button { background-color: #6b7280; }  
-        .secondary-button:hover { background-color: #4b5563; }  
-        .delete-button { background-color: #ef4444; }  
-        .delete-button:hover { background-color: #dc2626; }  
-        .expense-item { background-color: #fbfdff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.85rem 1.25rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06); cursor: pointer; transition: all 0.2s ease; }  
-        .expense-item:hover { background-color: #eef2f6; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }  
-        .expense-item .name { font-weight: 500; color: #333; font-size: 1.05rem; }  
-        .expense-item .details .price { margin-right: 0.6rem; font-weight: 600; color: #4f46e5; }  
-        .expense-item .details .category { font-size: 0.8rem; background-color: #bfdbfe; color: #1e3a8a; padding: 0.3rem 0.6rem; border-radius: 0.75rem; margin-left: 0.6rem; font-weight: 500; }  
-        .summary-card { background-color: #fbfdff; border: 1px solid #e2e8f0; border-radius: 1.25rem; padding: 1.5rem; margin-bottom: 1.25rem; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); transition: all 0.2s ease; }  
-        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1002; transition: opacity 0.3s ease-in-out; }  
-        .loading-overlay.hidden { opacity: 0; pointer-events: none; }  
-        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }  
-        .loading-text { margin-top: 1rem; font-size: 1.1rem; color: #4f46e5; }  
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }  
-        .toast-message { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: #fff; padding: 0.85rem 1.75rem; border-radius: 1.25rem; transition: bottom 0.5s ease-in-out; z-index: 1001; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }  
-        .toast-message.show { bottom: 2.5rem; }  
-        .fade-out { opacity: 0; transition: opacity 0.5s ease-out, transform 0.5s ease-out; transform: translateX(-100%); }  
-    </style>
-</head>  
-<body>  
-    <div id="loadingOverlay" class="loading-overlay">  
-        <div class="spinner"></div>  
-        <div class="loading-text" id="loadingText">جاري تهيئة التطبيق...</div>  
-    </div>  
-      
-    <div id="authScreen" class="main-container justify-center items-center hidden">  
-        <h1 class="text-4xl font-bold text-center mb-4 text-blue-700">أهلاً بك في مصاريفي</h1>  
-        <p class="text-gray-600 text-center mb-12">سجل الدخول باستخدام حساب جوجل للبدء في تتبع نفقاتك.</p>  
-        <button id="googleSignInBtn" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center justify-center gap-3 w-full max-w-sm py-3 text-lg">  
-            <svg class="w-6 h-6" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.42-4.55H24v8.51h12.8c-.57 2.76-2.26 5.15-4.8 6.79l7.98 6.19C45.27 36.64 48 31.1 48 24c0-.73-.08-1.45-.22-2.15l-1.4-.3z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.98-6.19c-2.17 1.45-4.94 2.32-8.02 2.32-6.27 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>  
-            تسجيل الدخول باستخدام جوجل  
-        </button>  
-    </div>  
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق مصاريفي - تتبع النفقات اليومية</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <!-- Lucide Icons CDN for vector icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Link to external CSS file -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 text-gray-800 transition-colors duration-300">
+    <!-- Loading Overlay for initial app load and operations -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">جاري تهيئة التطبيق...</div>
+    </div>
 
-    <div id="appScreen" class="main-container hidden">  
-        <header class="flex justify-between items-center mb-6">  
-            <div class="flex items-center gap-3">  
-                <img id="userAvatar" class="w-10 h-10 rounded-full" src="" alt="User Avatar">  
-                <span id="userName" class="font-semibold text-gray-700"></span>  
-            </div>  
-            <button id="signOutBtn" class="text-sm text-red-500 hover:text-red-700 font-semibold flex items-center gap-1">  
-                <i data-lucide="log-out" class="w-4 h-4"></i>  
-                خروج  
-            </button>  
-        </header>  
-          
-        <div class="flex justify-around bg-blue-100 p-2 rounded-2xl mb-8 shadow-inner">  
-            <button id="dailyTabBtn" class="tab-button active flex-1 mx-1">  
-                <i data-lucide="calendar-days" class="inline-block align-middle ml-2"></i> اليوم  
-            </button>  
-            <button id="monthlyTabBtn" class="tab-button flex-1 mx-1">  
-                <i data-lucide="bar-chart-2" class="inline-block align-middle ml-2"></i> الملخص الشهري  
-            </button>  
-        </div>  
+    <!-- Auth Screen: Shown when user is not logged in -->
+    <div id="authScreen" class="main-container justify-center items-center hidden">
+        <h1 class="text-4xl font-bold text-center mb-4 text-blue-700">أهلاً بك في مصاريفي</h1>
+        <p class="text-gray-600 text-center mb-12">سجل الدخول للمتابعة.</p>
+        <button id="signInBtn" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center justify-center gap-3 w-full max-w-sm py-3 text-lg">
+            <svg class="w-6 h-6" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.42-4.55H24v8.51h12.8c-.57 2.76-2.26 5.15-4.8 6.79l7.98 6.19C45.27 36.64 48 31.1 48 24c0-.73-.08-1.45-.22-2.15l-1.4-.3z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.98-6.19c-2.17 1.45-4.94 2.32-8.02 2.32-6.27 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
+            تسجيل الدخول
+        </button>
+    </div>
 
-        <div id="dailyPage" class="tab-content active flex-grow">  
-            <div class="p-5 bg-blue-50 rounded-2xl shadow-md mb-6">  
-                <div class="mb-5">  
-                    <label for="expenseDate" class="block text-sm font-medium text-gray-700 mb-2 text-right">التاريخ:</label>  
-                    <input type="date" id="expenseDate" class="focus:border-blue-500">  
-                </div>  
-                <div class="mb-5 relative">  
-                    <label for="productName" class="block text-sm font-medium text-gray-700 mb-2 text-right">اسم المنتج:</label>  
-                    <input type="text" id="productName" placeholder="مثال: قهوة، فاتورة كهرباء" class="focus:border-blue-500">  
-                </div>  
-                <div class="mb-5">  
-                    <label for="productPrice" class="block text-sm font-medium text-gray-700 mb-2 text-right">السعر:</label>  
-                    <input type="number" id="productPrice" placeholder="مثال: 15.50" step="0.01" class="focus:border-blue-500">  
-                </div>  
-                <div class="mb-6 flex justify-center flex-wrap gap-3">  
-                    <button id="addExpenseBtn" class="flex-1 py-3 text-lg min-w-[150px]">  
-                        <i data-lucide="plus" class="inline-block align-middle ml-2"></i> إضافة مصروف  
-                    </button>  
-                    <button id="cancelEditBtn" class="secondary-button flex-1 py-3 text-lg hidden min-w-[150px]">  
-                        <i data-lucide="x" class="inline-block align-middle ml-2"></i> إلغاء  
-                    </button>  
-                </div>  
-            </div>  
-            <h3 class="text-lg font-semibold text-gray-800 mb-4 text-right">مصاريف <span id="selectedDateDisplay"></span></h3>  
-            <div id="currentDateExpenseList" class="mb-4"></div>  
-            <div class="mt-4 p-4 bg-blue-100 text-blue-900 font-bold text-xl rounded-xl text-center shadow-sm">  
-                إجمالي اليوم: <span id="currentDateTotal">0.00</span>  
-            </div>  
-        </div>  
+    <!-- Main Application Screen: Shown when user is logged in -->
+    <div id="appScreen" class="main-container hidden">
+        <header class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+                <img id="userAvatar" class="w-10 h-10 rounded-full border-2 border-blue-400 shadow-md" src="" alt="User Avatar">
+                <span id="userName" class="font-semibold text-gray-700"></span>
+            </div>
+            <button id="settingsBtn" class="text-sm text-gray-500 hover:text-gray-700 font-semibold flex items-center gap-1 p-2 rounded-full hover:bg-gray-200 transition-colors">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+            </button>
+        </header>
 
-        <div id="monthlyPage" class="tab-content flex-grow">  
-            <div class="summary-card">  
-                <h3><i data-lucide="pie-chart" class="inline-block align-middle ml-2"></i> ملخص الإحصائيات الشهرية</h3>  
-                <p>إجمالي الشهر: <span id="monthlyTotal">0.00</span></p>  
-                <p>المتوسط اليومي: <span id="dailyAverage">0.00</span></p>  
-                <p>الأيام المسجلة: <span id="daysRecorded">0</span></p>  
-            </div>  
-            <div class="summary-card">  
-                <h3><i data-lucide="list-ordered" class="inline-block align-middle ml-2"></i> أعلى فئات الإنفاق</h3>  
-                <ul id="topCategoriesList" class="category-list"></ul>  
-            </div>  
-            <div class="summary-card">  
-                <h3><i data-lucide="database" class="inline-block align-middle ml-2"></i> إدارة البيانات</h3>  
-                <div class="flex flex-col gap-3">  
-                    <button id="exportDataBtn" class="py-3 secondary-button w-full flex items-center justify-center gap-2"><i data-lucide="download"></i> تصدير البيانات</button>  
-                    <input type="file" id="importFileInput" accept=".json" class="hidden" />  
-                    <button id="importDataBtn" class="py-3 secondary-button w-full flex items-center justify-center gap-2"><i data-lucide="upload"></i> استيراد البيانات</button>  
-                    <button id="clearAllDataBtn" class="py-3 delete-button w-full flex items-center justify-center gap-2"><i data-lucide="trash-2"></i> مسح جميع البيانات</button>  
-                </div>  
-            </div>  
-        </div>  
-    </div>  
-    <div id="toastMessage" class="toast-message"></div>  
+        <!-- Navigation Tabs -->
+        <div class="flex justify-around bg-blue-100 p-2 rounded-2xl mb-8 shadow-inner">
+            <button id="dailyTabBtn" class="tab-button active flex-1 mx-1">
+                <i data-lucide="calendar-days" class="inline-block align-middle ml-2"></i> اليوم
+            </button>
+            <button id="monthlyTabBtn" class="tab-button flex-1 mx-1">
+                <i data-lucide="bar-chart-2" class="inline-block align-middle ml-2"></i> الملخص الشهري
+            </button>
+            <button id="categoriesTabBtn" class="tab-button flex-1 mx-1">
+                <i data-lucide="tag" class="inline-block align-middle ml-2"></i> الفئات
+            </button>
+        </div>
 
-    <script type="module">  
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";  
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";  
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";  
+        <!-- Offline Status Banner -->
+        <div id="offlineBanner" class="offline-banner hidden">
+            <i data-lucide="wifi-off" class="w-5 h-5 ml-2"></i>
+            أنت غير متصل بالإنترنت. سيتم مزامنة التغييرات لاحقاً.
+        </div>
 
-        const firebaseConfig = {  
-            apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ",  
-            authDomain: "my-expenses-81714.firebaseapp.com",  
-            projectId: "my-expenses-81714",  
-            storageBucket: "my-expenses-81714.firebasestorage.app",  
-            messagingSenderId: "672207051964",  
-            appId: "1:672207051964:web:b6e0cedc143bd06fd584b9",  
-            measurementId: "G-YBTY3QD4YQ"  
-        };  
-          
-        let app, auth, db;  
-        let expensesCollectionRef;  
-        let unsubscribeFromExpenses = () => {};  
-        let expenses = [];  
-        let isEditing = false;  
-        let editingExpenseId = null;  
+        <!-- Daily Expenses Page -->
+        <div id="dailyPage" class="tab-content active flex-grow">
+            <div class="p-5 bg-blue-50 rounded-2xl shadow-md mb-6">
+                <div class="mb-5">
+                    <label for="expenseDate" class="block text-sm font-medium text-gray-700 mb-2 text-right">التاريخ:</label>
+                    <input type="date" id="expenseDate" class="focus:border-blue-500">
+                </div>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 text-right">مصاريف <span id="selectedDateDisplay"></span></h3>
+            <div id="dailyExpenseListContainer">
+                <!-- Loading Skeleton for daily expenses -->
+                <div id="dailyExpensesSkeleton" class="skeleton-list">
+                    <div class="skeleton-item h-12"></div>
+                    <div class="skeleton-item h-12"></div>
+                    <div class="skeleton-item h-12"></div>
+                </div>
+                <div id="currentDateExpenseList" class="mb-4 hidden"></div>
+            </div>
+            <div id="emptyDailyState" class="empty-state hidden">
+                <i data-lucide="clipboard-x" class="w-16 h-16 text-gray-400 mb-4"></i>
+                <p class="text-gray-600 text-lg text-center">لا توجد مصاريف لهذا اليوم.</p>
+                <p class="text-gray-500 text-md text-center mt-2">اضغط على زر <span class="font-bold">+</span> لإضافة أول مصروف لك!</p>
+            </div>
+            <div class="mt-4 p-4 bg-blue-100 text-blue-900 font-bold text-xl rounded-xl text-center shadow-sm">
+                إجمالي اليوم: <span id="currentDateTotal">0.00</span>
+            </div>
 
-        const DEFAULT_CATEGORIES = {  
-            'طعام': ['طعام', 'مطعم', 'وجبة', 'خضار', 'فاكهة', 'لحم', 'دجاج', 'سمك', 'خبز', 'حليب', 'بيض'],  
-            'مواصلات': ['بنزين', 'تاكسي', 'باص', 'مترو', 'مواصلات', 'سيارة'],  
-            'فواتير': ['كهرباء', 'ماء', 'انترنت', 'هاتف', 'فاتورة', 'إيجار'],  
-            'تسوق': ['ملابس', 'تسوق', 'أحذية', 'إلكترونيات', 'هدية', 'هدايا'],  
-            'صحة': ['صيدلية', 'دواء', 'طبيب', 'مستشفى', 'فيتامين'],  
-            'ترفيه': ['سينما', 'قهوة', 'مقهى', 'رحلة', 'كتاب', 'لعبة'],  
-            'شخصي': ['حلاق', 'شخصي', 'تدخين', 'سجاير']  
-        };  
+            <!-- Floating Action Button for adding new expense -->
+            <button id="addExpenseFAB" class="fab">
+                <i data-lucide="plus" class="w-8 h-8"></i>
+            </button>
+        </div>
 
-        const loadingOverlay = document.getElementById('loadingOverlay');  
-        const authScreen = document.getElementById('authScreen');  
-        const appScreen = document.getElementById('appScreen');  
-        const googleSignInBtn = document.getElementById('googleSignInBtn');  
-        const signOutBtn = document.getElementById('signOutBtn');  
-        const userAvatar = document.getElementById('userAvatar');  
-        const userName = document.getElementById('userName');  
+        <!-- Monthly Summary Page -->
+        <div id="monthlyPage" class="tab-content flex-grow">
+            <div id="monthlySummarySkeleton" class="skeleton-card-list">
+                <div class="summary-card skeleton-card h-32"></div>
+                <div class="summary-card skeleton-card h-48"></div>
+                <div class="summary-card skeleton-card h-40"></div>
+            </div>
+            <div id="monthlyContent" class="hidden">
+                <div class="summary-card">
+                    <h3 class="text-xl font-semibold mb-3 flex items-center"><i data-lucide="pie-chart" class="inline-block align-middle ml-2 w-6 h-6 text-blue-600"></i> ملخص الإحصائيات الشهرية</h3>
+                    <p class="text-lg">إجمالي الشهر: <span id="monthlyTotal" class="font-bold text-blue-700">0.00</span></p>
+                    <p class="text-md text-gray-600">المتوسط اليومي: <span id="dailyAverage">0.00</span></p>
+                    <p class="text-md text-gray-600">الأيام المسجلة: <span id="daysRecorded">0</span></p>
+                </div>
+                <div class="summary-card">
+                    <h3 class="text-xl font-semibold mb-3 flex items-center"><i data-lucide="list-ordered" class="inline-block align-middle ml-2 w-6 h-6 text-blue-600"></i> أعلى فئات الإنفاق</h3>
+                    <ul id="topCategoriesList" class="category-list">
+                        <!-- Top categories will be rendered here -->
+                    </ul>
+                    <div id="emptyCategoriesSummary" class="empty-state-small hidden text-center mt-4 text-gray-500">
+                        لا توجد بيانات للفئات لهذا الشهر.
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        const dailyTabBtn = document.getElementById('dailyTabBtn');  
-        const monthlyTabBtn = document.getElementById('monthlyTabBtn');  
-        const dailyPage = document.getElementById('dailyPage');  
-        const monthlyPage = document.getElementById('monthlyPage');  
+        <!-- Categories Management Page -->
+        <div id="categoriesPage" class="tab-content flex-grow">
+            <div class="p-5 bg-blue-50 rounded-2xl shadow-md mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 text-right">إدارة الفئات</h3>
+                <div class="mb-5">
+                    <label for="categoryNameInput" class="block text-sm font-medium text-gray-700 mb-2 text-right">اسم الفئة:</label>
+                    <input type="text" id="categoryNameInput" placeholder="مثال: طعام، مواصلات" class="focus:border-blue-500">
+                </div>
+                <div class="mb-6 flex justify-center flex-wrap gap-3">
+                    <button id="addCategoryBtn" class="flex-1 py-3 text-lg min-w-[150px]">
+                        <i data-lucide="plus" class="inline-block align-middle ml-2"></i> إضافة فئة
+                    </button>
+                    <button id="cancelCategoryEditBtn" class="secondary-button flex-1 py-3 text-lg hidden min-w-[150px]">
+                        <i data-lucide="x" class="inline-block align-middle ml-2"></i> إلغاء
+                    </button>
+                </div>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 text-right">فئاتك المخصصة</h3>
+            <div id="categoriesListContainer">
+                <div id="categoriesSkeleton" class="skeleton-list">
+                    <div class="skeleton-item h-12"></div>
+                    <div class="skeleton-item h-12"></div>
+                    <div class="skeleton-item h-12"></div>
+                </div>
+                <div id="userCategoriesList" class="mb-4 hidden"></div>
+            </div>
+            <div id="emptyCategoriesState" class="empty-state hidden">
+                <i data-lucide="tag-off" class="w-16 h-16 text-gray-400 mb-4"></i>
+                <p class="text-gray-600 text-lg text-center">لم تقم بإضافة أي فئات بعد.</p>
+                <p class="text-gray-500 text-md text-center mt-2">يمكنك إضافة فئات خاصة بك لتنظيم مصاريفك بشكل أفضل.</p>
+            </div>
+        </div>
 
-        const expenseDateInput = document.getElementById('expenseDate');  
-        const productNameInput = document.getElementById('productName');  
-        const productPriceInput = document.getElementById('productPrice');  
-        const addExpenseBtn = document.getElementById('addExpenseBtn');  
-        const cancelEditBtn = document.getElementById('cancelEditBtn');  
-        const currentDateExpenseList = document.getElementById('currentDateExpenseList');  
-        const selectedDateDisplay = document.getElementById('selectedDateDisplay');  
-        const currentDateTotalDisplay = document.getElementById('currentDateTotal');  
+        <!-- Settings Page -->
+        <div id="settingsPage" class="tab-content flex-grow">
+            <div class="summary-card">
+                <h3 class="text-xl font-semibold mb-4 flex items-center"><i data-lucide="user" class="inline-block align-middle ml-2 w-6 h-6 text-blue-600"></i> ملفي الشخصي</h3>
+                <div class="flex items-center gap-4 mb-4">
+                    <img id="settingsUserAvatar" class="w-16 h-16 rounded-full border-2 border-blue-400 shadow-md" src="" alt="User Avatar">
+                    <div>
+                        <p id="settingsUserName" class="text-lg font-semibold"></p>
+                        <p id="settingsUserEmail" class="text-gray-600 text-sm"></p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between mb-4">
+                    <label for="darkModeToggle" class="text-lg font-medium text-gray-700">الوضع المظلم</label>
+                    <label class="switch">
+                        <input type="checkbox" id="darkModeToggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <p class="text-gray-600 text-xs">معرف المستخدم: <span id="displayUserId" class="font-mono text-xs break-all"></span></p>
+                <button id="signOutBtn" class="mt-6 w-full py-3 text-lg delete-button flex items-center justify-center gap-2">
+                    <i data-lucide="log-out" class="w-5 h-5"></i> تسجيل الخروج
+                </button>
+            </div>
 
-        const monthlyTotalDisplay = document.getElementById('monthlyTotal');  
-        const dailyAverageDisplay = document.getElementById('dailyAverage');  
-        const daysRecordedDisplay = document.getElementById('daysRecorded');  
-        const topCategoriesList = document.getElementById('topCategoriesList');  
-          
-        const exportDataBtn = document.getElementById('exportDataBtn');  
-        const importDataBtn = document.getElementById('importDataBtn');  
-        const importFileInput = document.getElementById('importFileInput');  
-        const clearAllDataBtn = document.getElementById('clearAllDataBtn');  
-        const toastMessageElement = document.getElementById('toastMessage');  
+            <div class="summary-card">
+                <h3 class="text-xl font-semibold mb-3 flex items-center"><i data-lucide="database" class="inline-block align-middle ml-2 w-6 h-6 text-blue-600"></i> إدارة البيانات</h3>
+                <div class="flex flex-col gap-3">
+                    <button id="exportDataBtn" class="py-3 secondary-button w-full flex items-center justify-center gap-2"><i data-lucide="download"></i> تصدير البيانات</button>
+                    <input type="file" id="importFileInput" accept=".json" class="hidden" />
+                    <button id="importDataBtn" class="py-3 secondary-button w-full flex items-center justify-center gap-2"><i data-lucide="upload"></i> استيراد البيانات</button>
+                    <button id="clearAllDataBtn" class="py-3 delete-button w-full flex items-center justify-center gap-2"><i data-lucide="trash-2"></i> مسح جميع البيانات</button>
+                </div>
+            </div>
+        </div>
 
-        function showToast(message, duration = 3000) {  
-            toastMessageElement.textContent = message;  
-            toastMessageElement.classList.add('show');  
-            setTimeout(() => {  
-                toastMessageElement.classList.remove('show');  
-            }, duration);  
-        }  
+    </div>
 
-        function getDateString(date) {  
-            const d = new Date(date);  
-            const year = d.getFullYear();  
-            const month = String(d.getMonth() + 1).padStart(2, '0');  
-            const day = String(d.getDate()).padStart(2, '0');  
-            return `${year}-${month}-${day}`;  
-        }  
-          
-        function formatCurrency(amount) {  
-            return new Intl.NumberFormat('ar-AE', { style: 'currency', currency: 'AED' }).format(amount || 0);  
-        }  
+    <!-- Toast Message for quick notifications -->
+    <div id="toastMessage" class="toast-message"></div>
 
-        function suggestCategory(productName) {  
-            const lowerProductName = productName.toLowerCase();  
-            for (const category in DEFAULT_CATEGORIES) {  
-                if (DEFAULT_CATEGORIES[category].some(keyword => lowerProductName.includes(keyword))) {  
-                    return category;  
-                }  
-            }  
-            return 'أخرى';  
-        }  
+    <!-- Expense Modal -->
+    <div id="expenseModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 id="expenseModalTitle" class="text-2xl font-bold mb-6 text-blue-700 text-center">إضافة مصروف جديد</h2>
+            <div class="mb-5">
+                <label for="modalExpenseDate" class="block text-sm font-medium text-gray-700 mb-2 text-right">التاريخ:</label>
+                <input type="date" id="modalExpenseDate" class="focus:border-blue-500">
+            </div>
+            <div class="mb-5">
+                <label for="modalProductName" class="block text-sm font-medium text-gray-700 mb-2 text-right">اسم المنتج:</label>
+                <input type="text" id="modalProductName" placeholder="مثال: قهوة، فاتورة كهرباء" class="focus:border-blue-500">
+            </div>
+            <div class="mb-5">
+                <label for="modalProductPrice" class="block text-sm font-medium text-gray-700 mb-2 text-right">السعر:</label>
+                <input type="number" id="modalProductPrice" placeholder="مثال: 15.50" step="0.01" class="focus:border-blue-500">
+            </div>
+            <div class="mb-6">
+                <label for="modalCategorySelect" class="block text-sm font-medium text-gray-700 mb-2 text-right">الفئة:</label>
+                <select id="modalCategorySelect" class="focus:border-blue-500">
+                    <!-- Categories will be dynamically loaded here -->
+                </select>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button id="saveExpenseBtn" class="py-3 text-lg min-w-[120px]">
+                    <i data-lucide="save" class="inline-block align-middle ml-2"></i> حفظ
+                </button>
+                <button id="cancelExpenseModalBtn" class="secondary-button py-3 text-lg min-w-[120px]">
+                    <i data-lucide="x" class="inline-block align-middle ml-2"></i> إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
 
-        function renderCurrentDateExpenses() {  
-            const selectedDate = expenseDateInput.value;  
-            selectedDateDisplay.textContent = new Date(selectedDate).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });  
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal-overlay hidden">
+        <div class="modal-content-small">
+            <h2 id="confirmModalTitle" class="text-xl font-bold mb-4 text-center">تأكيد</h2>
+            <p id="confirmModalMessage" class="text-gray-700 mb-6 text-center"></p>
+            <div class="flex justify-end gap-3">
+                <button id="confirmModalYes" class="py-2 px-5 text-md bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors">
+                    نعم
+                </button>
+                <button id="confirmModalNo" class="py-2 px-5 text-md bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-xl transition-colors">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
 
-            const expensesForDate = expenses.filter(e => e.date === selectedDate).sort((a,b) => b.timestamp - a.timestamp);  
-            currentDateExpenseList.innerHTML = '';  
-            let total = 0;  
-
-            if (expensesForDate.length === 0) {  
-                 currentDateExpenseList.innerHTML = `<p class="text-center text-gray-500 py-4">لا توجد مصاريف لهذا اليوم.</p>`;  
-            } else {  
-                expensesForDate.forEach(exp => {  
-                    total += exp.price;  
-                    const item = document.createElement('div');  
-                    item.className = 'expense-item';  
-                    item.dataset.id = exp.id;  
-                    item.innerHTML = `  
-                        <div class="name">${exp.name}</div>  
-                        <div class="details flex items-center">\n                            <span class="category">${exp.category}</span>  
-                            <span class="price">${formatCurrency(exp.price)}</span>  
-                            <button class="delete-btn text-red-500 hover:text-red-700 ml-2 p-1 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>  
-                        </div>  
-                    `;  
-                    item.addEventListener('click', () => editExpense(exp.id));  
-                    item.querySelector('.delete-btn').addEventListener('click', (e) => {  
-                        e.stopPropagation();  
-                        deleteExpense(exp.id, item);  
-                    });  
-                    currentDateExpenseList.appendChild(item);  
-                });  
-            }  
-            currentDateTotalDisplay.textContent = formatCurrency(total);  
-            lucide.createIcons();  
-        }  
-
-        function updateMonthlySummary() {  
-            const now = new Date();  
-            const currentMonth = now.getMonth();  
-            const currentYear = now.getFullYear();  
-
-            const monthlyExpenses = expenses.filter(exp => {  
-                const expDate = new Date(exp.date);  
-                return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;  
-            });  
-
-            const monthlyTotal = monthlyExpenses.reduce((sum, exp) => sum + exp.price, 0);  
-            const uniqueDays = [...new Set(monthlyExpenses.map(exp => exp.date))];  
-            const daysRecorded = uniqueDays.length;  
-            const dailyAverage = daysRecorded > 0 ? monthlyTotal / daysRecorded : 0;  
-              
-            monthlyTotalDisplay.textContent = formatCurrency(monthlyTotal);  
-            dailyAverageDisplay.textContent = formatCurrency(dailyAverage);  
-            daysRecordedDisplay.textContent = daysRecorded;  
-
-            const categoryTotals = monthlyExpenses.reduce((acc, exp) => {  
-                acc[exp.category] = (acc[exp.category] || 0) + exp.price;  
-                return acc;  
-            }, {});  
-
-            topCategoriesList.innerHTML = '';  
-            Object.entries(categoryTotals)  
-                .sort(([, a], [, b]) => b - a)  
-                .forEach(([category, total]) => {  
-                    const li = document.createElement('li');  
-                    li.className = "flex justify-between py-2 border-b";  
-                    li.innerHTML = `<span>${category}</span> <span>${formatCurrency(total)}</span>`;  
-                    topCategoriesList.appendChild(li);  
-                });  
-        }  
-          
-        async function addOrUpdateExpense() {  
-            const name = productNameInput.value.trim();  
-            const price = parseFloat(productPriceInput.value);  
-            const date = expenseDateInput.value;  
-            if (!name || isNaN(price) || price <= 0 || !date) {  
-                showToast("الرجاء إدخال بيانات صحيحة.");  
-                return;  
-            }  
-            const category = suggestCategory(name);  
-
-            const expenseData = { name, price, date, category, timestamp: new Date().getTime() };  
-            loadingOverlay.classList.remove('hidden');  
-
-            try {  
-                if (isEditing) {  
-                    await updateDoc(doc(expensesCollectionRef, editingExpenseId), expenseData);  
-                    showToast("تم تحديث المصروف بنجاح.");  
-                } else {  
-                    await addDoc(expensesCollectionRef, expenseData);  
-                    showToast("تمت إضافة المصروف بنجاح.");  
-                }  
-                cancelEdit();  
-            } catch (error) {  
-                console.error("Error saving expense: ", error);  
-                showToast("حدث خطأ أثناء الحفظ.");  
-            } finally {  
-                loadingOverlay.classList.add('hidden');  
-            }  
-        }  
-
-        function editExpense(id) {  
-            const expense = expenses.find(e => e.id === id);  
-            if (expense) {  
-                isEditing = true;  
-                editingExpenseId = id;  
-                productNameInput.value = expense.name;  
-                productPriceInput.value = expense.price;  
-                expenseDateInput.value = expense.date;  
-                addExpenseBtn.innerHTML = `<i data-lucide="edit" class="inline-block align-middle ml-2"></i> تحديث`;  
-                cancelEditBtn.classList.remove('hidden');  
-                lucide.createIcons();  
-            }  
-        }  
-
-        function cancelEdit() {  
-            isEditing = false;  
-            editingExpenseId = null;  
-            productNameInput.value = '';  
-            productPriceInput.value = '';  
-            addExpenseBtn.innerHTML = `<i data-lucide="plus" class="inline-block align-middle ml-2"></i> إضافة مصروف`;  
-            cancelEditBtn.classList.add('hidden');  
-            lucide.createIcons();  
-        }  
-          
-        async function deleteExpense(id, element) {  
-            if (confirm("هل أنت متأكد من حذف هذا المصروف؟")) {  
-                 element.classList.add('fade-out');  
-                 setTimeout(async () => {  
-                    try {  
-                        await deleteDoc(doc(expensesCollectionRef, id));  
-                        showToast("تم حذف المصروف.");  
-                    } catch (error) {  
-                        console.error("Error deleting expense: ", error);  
-                        showToast("حدث خطأ أثناء الحذف.");  
-                        element.classList.remove('fade-out');  
-                    }  
-                 }, 500);  
-            }  
-        }  
-
-        function exportData() {  
-            if (expenses.length === 0) {  
-                showToast("لا توجد بيانات لتصديرها.");  
-                return;  
-            }  
-            const dataStr = JSON.stringify(expenses.map(({id, ...rest}) => rest), null, 2);  
-            const blob = new Blob([dataStr], {type: 'application/json'});  
-            const url = URL.createObjectURL(blob);  
-            const a = document.createElement('a');  
-            a.href = url;  
-            a.download = `expenses_backup_${new Date().toISOString().split('T')[0]}.json`;  
-            a.click();  
-            URL.revokeObjectURL(url);  
-            showToast("تم بدء تصدير البيانات.");  
-        }  
-
-        function importData() {  
-            if (!confirm("سيتم إضافة المصاريف من الملف. هل تريد المتابعة؟")) return;  
-            importFileInput.click();  
-        }  
-
-        async function handleImportFile(event) {  
-            const file = event.target.files[0];  
-            if (!file) return;  
-            const text = await file.text();  
-            try {  
-                const importedExpenses = JSON.parse(text);  
-                if (!Array.isArray(importedExpenses)) throw new Error("File is not an array");  
-
-                loadingOverlay.classList.remove('hidden');  
-                const batch = writeBatch(db);  
-                importedExpenses.forEach(exp => {  
-                    const newDocRef = doc(expensesCollectionRef); // Create a new doc with a random ID  
-                    batch.set(newDocRef, {  
-                        ...exp,  
-                        timestamp: exp.timestamp || new Date(exp.date).getTime()  
-                    });  
-                });  
-                await batch.commit();  
-                showToast(`تم استيراد ${importedExpenses.length} عنصر بنجاح.`);  
-            } catch (error) {  
-                console.error("Import failed: ", error);  
-                showToast("فشل استيراد الملف. تأكد من أن صيغته صحيحة.");  
-            } finally {  
-                importFileInput.value = '';  
-                loadingOverlay.classList.add('hidden');  
-            }  
-        }  
-
-        async function clearAllData() {  
-            if (confirm("تحذير! سيتم حذف جميع بياناتك بشكل نهائي. هل أنت متأكد؟")) {  
-                loadingOverlay.classList.remove('hidden');  
-                try {  
-                    const querySnapshot = await getDocs(expensesCollectionRef);  
-                    const batch = writeBatch(db);  
-                    querySnapshot.docs.forEach(d => batch.delete(d.ref));  
-                    await batch.commit();  
-                    showToast("تم مسح جميع البيانات.");  
-                } catch (error) {  
-                    console.error("Error clearing data:", error);  
-                    showToast("حدث خطأ أثناء مسح البيانات.");  
-                } finally {  
-                    loadingOverlay.classList.add('hidden');  
-                }  
-            }  
-        }  
-
-        function setupFirestoreListener(uid) {  
-            expensesCollectionRef = collection(db, 'users', uid, 'expenses');  
-            unsubscribeFromExpenses = onSnapshot(expensesCollectionRef, (snapshot) => {  
-                expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));  
-                renderCurrentDateExpenses();  
-                if(monthlyPage.classList.contains('active')) {  
-                    updateMonthlySummary();  
-                }  
-            }, (error) => {  
-                console.error("Error listening to expenses:", error);  
-                showToast("خطأ في الاتصال بقاعدة البيانات.");  
-            });  
-        }  
-
-        function initializeAppUi(user) {  
-            userAvatar.src = user.photoURL || 'https://i.pravatar.cc/40';  
-            userName.textContent = user.displayName || 'مستخدم';  
-              
-            appScreen.classList.remove('hidden');  
-            authScreen.classList.add('hidden');  
-            loadingOverlay.classList.add('hidden');  
-
-            setupFirestoreListener(user.uid);  
-        }  
-
-        function resetAppUi() {  
-            if(unsubscribeFromExpenses) unsubscribeFromExpenses();  
-            expenses = [];  
-            appScreen.classList.add('hidden');  
-            authScreen.classList.remove('hidden');  
-            loadingOverlay.classList.add('hidden');  
-            renderCurrentDateExpenses();  
-            updateMonthlySummary();  
-        }  
-
-        document.addEventListener('DOMContentLoaded', () => {  
-            try {  
-                app = initializeApp(firebaseConfig);  
-                auth = getAuth(app);  
-                db = getFirestore(app);  
-
-                if(!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {  
-                    loadingOverlay.classList.add('hidden');  
-                    document.body.innerHTML = `<div class="h-screen w-screen flex flex-col justify-center items-center bg-red-100 text-red-800 p-8">\n                        <h1 class="text-2xl font-bold mb-4">خطأ في الإعدادات</h1>\n                        <p class="text-center">الرجاء استبدال بيانات تهيئة Firebase المؤقتة في ملف index.html بالبيانات الحقيقية لمشروعك.</p>\n                    </div>`;  
-                    return;  
-                }  
-
-                onAuthStateChanged(auth, user => {  
-                    if (user) {  
-                        initializeAppUi(user);  
-                    } else {  
-                        resetAppUi();  
-                    }  
-                });  
-
-            } catch (error) {  
-                console.error("Firebase Init Error:", error);  
-                loadingOverlay.classList.add('hidden');  
-                showToast("فشل تهيئة التطبيق. تأكد من صحة إعدادات Firebase.");  
-            }  
-
-            lucide.createIcons();  
-            expenseDateInput.value = getDateString(new Date());  
-
-            googleSignInBtn.addEventListener('click', async () => {  
-                loadingOverlay.classList.remove('hidden');  
-                try {  
-                    const provider = new GoogleAuthProvider();  
-                    await signInWithPopup(auth, provider);  
-                } catch (error) {  
-                    console.error("Google Sign-In Error: ", error);  
-                    showToast("فشل تسجيل الدخول. الرجاء المحاولة مرة أخرى.");  
-                } finally {  
-                    loadingOverlay.classList.add('hidden');  
-                }  
-            });  
-
-            signOutBtn.addEventListener('click', async () => {  
-                await signOut(auth);  
-                showToast("تم تسجيل الخروج بنجاح.");  
-            });  
-              
-            dailyTabBtn.addEventListener('click', () => {  
-                dailyTabBtn.classList.add('active');  
-                monthlyTabBtn.classList.remove('active');  
-                dailyPage.classList.add('active');  
-                monthlyPage.classList.remove('active');  
-            });  
-            monthlyTabBtn.addEventListener('click', () => {  
-                monthlyTabBtn.classList.add('active');  
-                dailyTabBtn.classList.remove('active');  
-                monthlyPage.classList.add('active');  
-                dailyPage.classList.remove('active');  
-                updateMonthlySummary();  
-            });  
-
-            expenseDateInput.addEventListener('change', renderCurrentDateExpenses);  
-            addExpenseBtn.addEventListener('click', addOrUpdateExpense);  
-            cancelEditBtn.addEventListener('click', cancelEdit);  
-            exportDataBtn.addEventListener('click', exportData);  
-            importDataBtn.addEventListener('click', importData);  
-            importFileInput.addEventListener('change', handleImportFile);  
-            clearAllDataBtn.addEventListener('click', clearAllData);  
-              
-            if ('serviceWorker' in navigator) {  
-                window.addEventListener('load', () => {  
-                    navigator.serviceWorker.register('sw.js')  
-                        .then(reg => console.log('Service Worker: Registered'))  
-                        .catch(err => console.log(`Service Worker: Error: ${err}`));  
-                });  
-            }  
-        });  
-    </script>
-</body>  
+    <!-- Link to external JavaScript file -->
+    <script type="module" src="app.js"></script>
+</body>
 </html>
+
