@@ -1,12 +1,23 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// Firebase Configuration (YOUR CONFIGURATION IS NOW HARDCODED HERE)
+const firebaseConfig = {
+  apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ",
+  authDomain: "my-expenses-81714.firebaseapp.com",
+  projectId: "my-expenses-81714",
+  storageBucket: "my-expenses-81714.firebasestorage.app",
+  messagingSenderId: "672207051964",
+  appId: "1:672207051964:web:b6e0cedc143bd06fd584b9",
+  measurementId: "G-YBTY3QD4YQ"
+};
 
 // Global Firebase and application state variables
 let app, auth, db;
 let expensesCollectionRef;
 let categoriesCollectionRef;
-let userId;
+let userId; // Will store the Firebase User UID
 let unsubscribeFromExpenses = () => {};
 let unsubscribeFromCategories = () => {};
 
@@ -872,13 +883,16 @@ function updateOfflineStatus() {
  * @param {string} uid The current user's UID.
  */
 function setupFirestoreListeners(uid) {
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    // The appId for your Firebase project; for standalone use, you can get it from firebaseConfig.appId
+    // If you were in a Canvas environment that provides __app_id, you would use that.
+    const appId = firebaseConfig.appId; 
 
     // Unsubscribe from previous listeners if they exist
     if (unsubscribeFromExpenses) unsubscribeFromExpenses();
     if (unsubscribeFromCategories) unsubscribeFromCategories();
 
     // Define collection references with the specific path
+    // IMPORTANT: Make sure your Firestore Security Rules match this path
     expensesCollectionRef = collection(db, 'artifacts', appId, 'users', uid, 'expenses');
     categoriesCollectionRef = collection(db, 'artifacts', appId, 'users', uid, 'categories');
 
@@ -955,49 +969,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initial loading state
     toggleLoading(true, 'جاري تهيئة التطبيق...');
 
-    // Get Firebase config from global variable provided by Canvas environment
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-    if (!firebaseConfig) {
-        toggleLoading(false);
-        document.body.innerHTML = `<div class="h-screen w-screen flex flex-col justify-center items-center bg-red-100 text-red-800 p-8">
-            <h1 class="text-2xl font-bold mb-4">خطأ في الإعدادات</h1>
-            <p class="text-center">الرجاء توفير تهيئة Firebase الصحيحة (عبر __firebase_config).</p>
-        </div>`;
-        return;
-    }
-
+    // Initialize Firebase app, auth, and db directly with your hardcoded config
     try {
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
 
+        // Check if API key is valid (simple check)
+        if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {
+            toggleLoading(false);
+            document.body.innerHTML = `<div class="h-screen w-screen flex flex-col justify-center items-center bg-red-100 text-red-800 p-8">
+                <h1 class="text-2xl font-bold mb-4">خطأ في الإعدادات</h1>
+                <p class="text-center">الرجاء استبدال بيانات تهيئة Firebase المؤقتة في ملف app.js بالبيانات الحقيقية لمشروعك.</p>
+            </div>`;
+            return;
+        }
+
         // Listen for authentication state changes
         onAuthStateChanged(auth, async user => {
             if (user) {
-                // Check if it's the initial auth check completion
-                if (!appState.isAuthReady) {
-                    appState.isAuthReady = true; // Mark auth as ready
-                    initializeAppUi(user);
-                }
+                initializeAppUi(user);
             } else {
-                // If no user, and it's the initial auth check, try to sign in anonymously if no token
-                if (!appState.isAuthReady) {
-                    appState.isAuthReady = true; // Mark auth as ready regardless of sign-in method
-                    try {
-                        if (initialAuthToken) {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    } catch (signInError) {
-                        console.error("Authentication failed:", signInError);
-                        showToast("فشل تسجيل الدخول التلقائي.");
-                        resetAppUi(); // Show auth screen if auto-sign-in fails
-                    }
-                } else {
-                    resetAppUi(); // User logged out or auto-sign-in failed after being ready
+                // If no user, try to sign in anonymously as a default if not using Google
+                // For a real Google Sign-In button, you'd trigger signInWithPopup here.
+                // For this app, we default to anonymous sign-in if no user is found on startup
+                // to allow data persistence for unauthenticated users (with proper security rules).
+                try {
+                    await signInAnonymously(auth);
+                } catch (anonSignInError) {
+                    console.error("Anonymous Sign-In Error:", anonSignInError);
+                    showToast("فشل تسجيل الدخول التلقائي كمجهول.");
+                    resetAppUi(); // Show auth screen if anonymous sign-in fails
                 }
             }
         });
@@ -1024,17 +1026,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     signInBtn.addEventListener('click', async () => {
         toggleLoading(true, 'جاري تسجيل الدخول...');
         try {
-            // Since we're using custom token/anonymous, this button would typically not be for Google Sign-In pop-up
-            // For a production app, you'd integrate actual Google Sign-In with your Firebase project
-            // For Canvas, it's handled by __initial_auth_token.
-            showToast("تسجيل الدخول يتم تلقائيًا عبر البيئة.", 5000);
-            toggleLoading(false);
-            // If you still want a "sign in" button for an unauthenticated state when __initial_auth_token isn't available,
-            // you'd call signInAnonymously() here or prompt for a real Google Sign-In method if configured.
-            await signInAnonymously(auth); // Fallback if no token was available initially
+            const provider = new GoogleAuthProvider();
+            await signInWithPopup(auth, provider);
+            // The onAuthStateChanged listener will handle UI update
         } catch (error) {
-            console.error("Sign-In Error: ", error);
-            showToast("فشل تسجيل الدخول. الرجاء المحاولة مرة أخرى.");
+            console.error("Google Sign-In Error: ", error);
+            showToast("فشل تسجيل الدخول باستخدام جوجل.");
+        } finally {
             toggleLoading(false);
         }
     });
@@ -1095,4 +1093,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 });
-
