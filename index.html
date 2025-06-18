@@ -1,1649 +1,548 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Expenses - Tracking Daily Expenses</title>
-    <!-- Link to the Web App Manifest for PWA functionality -->
-    <link rel="manifest" href="manifest.json">
-    <!-- Tailwind CSS CDN for minimalist, responsive styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Lucide Icons for modern, customizable SVG icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <style>
-        /* Custom CSS for overall theme and mobile optimization */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5; /* Light gray background */
-            color: #333;
-            direction: rtl; /* Ensure RTL direction for the whole body */
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 1rem;
-            background-color: #fff;
-            border-radius: 1.5rem; /* More rounded */
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08); /* Deeper shadow */
-            min-height: 100vh; /* Ensure it takes full height on small screens */
-            display: flex;
-            flex-direction: column;
-            animation: fadeIn 0.5s ease-out; /* Page load animation */
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Custom styles for tabs */
-        .tab-button {
-            padding: 0.85rem 1.75rem; /* Slightly larger padding */
-            border-radius: 1.25rem; /* More rounded */
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease-in-out; /* Smoother transition */
-            background-color: #e0e7ff; /* Light blue */
-            color: #4f46e5; /* Darker blue */
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Subtle shadow */
-        }
-        .tab-button.active {
-            background-color: #4f46e5; /* Primary blue */
-            color: #fff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* More prominent shadow when active */
-            transform: translateY(-2px); /* Slight lift */
-        }
-        .tab-button:hover:not(.active) {
-            background-color: #c7d2fe; /* Lighter blue on hover */
-            transform: translateY(-1px);
-        }
-
-        /* Tab Content Transition */
-        .tab-content {
-            display: none;
-            padding-top: 1rem;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out; /* Smooth transition for content */
-        }
-        .tab-content.active {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Input field styling */
-        input[type="text"], input[type="number"], input[type="date"] {
-            padding: 0.85rem 1.25rem; /* Slightly larger padding */
-            border: 1px solid #cbd5e1; /* Light gray border */
-            border-radius: 1rem; /* More rounded */
-            font-size: 1rem;
-            width: 100%;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            text-align: right; /* Align text right for RTL */
-            background-color: #fbfdff; /* Slightly off-white background */
-        }
-        input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus {
-            outline: none;
-            border-color: #6366f1; /* Focus blue */
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25); /* More prominent focus shadow */
-        }
-
-        /* Button styling */
-        button {
-            padding: 0.85rem 1.75rem;
-            border-radius: 1.25rem; /* More rounded */
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
-            background-color: #4f46e5; /* Primary blue */
-            color: #fff;
-            border: none;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Standard button shadow */
-            text-align: center;
-        }
-        button:hover {
-            background-color: #4338ca; /* Darker blue on hover */
-            transform: translateY(-2px); /* Slight lift */
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Enhanced shadow on hover */
-        }
-        button:active {
-            transform: translateY(0); /* Press effect */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .secondary-button {
-            background-color: #6b7280; /* Gray */
-        }
-        .secondary-button:hover {
-            background-color: #4b5563; /* Darker gray */
-        }
-        .delete-button {
-            background-color: #ef4444; /* Red */
-        }
-        .delete-button:hover {
-            background-color: #dc2626; /* Darker red */
-        }
-
-        /* Suggestion buttons */
-        .suggestion-button {
-            padding: 0.6rem 1.2rem; /* Slightly larger */
-            border-radius: 0.75rem; /* More rounded */
-            background-color: #e0e7ff;
-            color: #4f46e5;
-            border: 1px solid #a5b4fc;
-            font-size: 0.9rem; /* Slightly larger font */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-            text-align: center;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Subtle shadow */
-        }
-        .suggestion-button:hover {
-            background-color: #c7d2fe;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Expense item styling */
-        .expense-item {
-            background-color: #fbfdff; /* Lighter white */
-            border: 1px solid #e2e8f0; /* Light gray */
-            border-radius: 1rem; /* More rounded */
-            padding: 0.85rem 1.25rem; /* Larger padding */
-            margin-bottom: 0.75rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06); /* Enhanced shadow */
-            cursor: pointer; /* Indicate clickable for editing */
-            transition: all 0.2s ease; /* Smooth transition */
-        }
-        .expense-item:hover {
-            background-color: #eef2f6; /* Slight hover effect */
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .expense-item .name {
-            font-weight: 500;
-            color: #333;
-            font-size: 1.05rem; /* Slightly larger font */
-        }
-        .expense-item .details {
-            font-size: 0.95rem; /* Slightly larger font */
-            color: #666;
-            text-align: left; /* Align category and price left for RTL */
-            display: flex;
-            align-items: center;
-        }
-        /* Adjust for icon placement in RTL */
-        .expense-item .details .price {
-            margin-right: 0.6rem; /* Space between category and price */
-            font-weight: 600;
-            color: #4f46e5;
-        }
-        .expense-item .details .category {
-             font-size: 0.8rem;
-             background-color: #bfdbfe; /* Lighter blue for category */
-             color: #1e3a8a; /* Darker blue for category text */
-             padding: 0.3rem 0.6rem; /* Slightly larger padding */
-             border-radius: 0.75rem; /* More rounded */
-             margin-left: 0.6rem; /* Space after category */
-             font-weight: 500;
-        }
-
-        /* Monthly summary cards */
-        .summary-card {
-            background-color: #fbfdff;
-            border: 1px solid #e2e8f0;
-            border-radius: 1.25rem; /* More rounded */
-            padding: 1.5rem; /* Larger padding */
-            margin-bottom: 1.25rem; /* Larger margin */
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); /* Deeper shadow */
-            transition: all 0.2s ease;
-        }
-        .summary-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-        }
-        .summary-card h3 {
-            font-size: 1.35rem; /* Larger font */
-            font-weight: 700; /* Bolder font */
-            color: #4f46e5;
-            margin-bottom: 1rem; /* Larger margin */
-            text-align: right;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem; /* Space between icon and text */
-        }
-        .summary-card h3 svg { /* Lucide icons in headings */
-            width: 24px;
-            height: 24px;
-        }
-        .summary-card p {
-            font-size: 1.15rem; /* Slightly larger font */
-            color: #333;
-            margin-bottom: 0.6rem; /* Adjust margin */
-            text-align: right;
-        }
-        .summary-card span {
-            font-weight: 700;
-            color: #1e3a8a;
-        }
-        .category-list li {
-            padding: 0.6rem 0; /* Larger padding */
-            border-bottom: 1px dashed #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            text-align: right;
-            font-size: 1.05rem;
-        }
-        .category-list li:last-child {
-            border-bottom: none;
-        }
-        .history-item {
-            background-color: #fbfdff;
-            border: 1px solid #e2e8f0;
-            border-radius: 1rem; /* More rounded */
-            padding: 0.85rem 1.25rem; /* Larger padding */
-            margin-bottom: 0.75rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            text-align: right;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05); /* Subtle shadow */
-            transition: all 0.2s ease;
-        }
-        .history-item:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
-        .history-item .date {
-            font-weight: 600;
-            color: #4f46e5;
-            font-size: 1.05rem;
-        }
-        .history-item .count {
-            font-size: 0.95rem;
-            color: #666;
-        }
-
-        /* Autocomplete suggestions dropdown */
-        .autocomplete-suggestions {
-            border: 1px solid #e0e7ff; /* Lighter border */
-            max-height: 180px; /* Taller */
-            overflow-y: auto;
-            position: absolute;
-            z-index: 100;
-            background-color: #fff;
-            width: calc(100% - 2rem); /* Match input width, accounting for padding */
-            border-radius: 1rem; /* More rounded */
-            box-shadow: 0 6px 15px rgba(0,0,0,0.1); /* Deeper shadow */
-            margin-top: 0.5rem;
-            left: 1rem; /* RTL adjustment */
-            right: 1rem; /* RTL adjustment */
-            direction: rtl; /* Ensure RTL */
-        }
-        .autocomplete-suggestions div {
-            padding: 0.85rem 1.25rem; /* Larger padding */
-            cursor: pointer;
-            text-align: right; /* Align text right for RTL */
-            border-bottom: 1px solid #f0f2f5; /* Lighter separator */
-            transition: background-color 0.2s;
-        }
-        .autocomplete-suggestions div:last-child {
-            border-bottom: none;
-        }
-        .autocomplete-suggestions div:hover {
-            background-color: #f0f2f5;
-        }
-
-        /* User ID display - Hidden as Firebase is removed */
-        #userIdDisplay {
-            display: none; /* Keep hidden as per user request */
-        }
-
-        /* Daily Summary Card styling */
-        .daily-summary-card {
-            background-color: #fbfdff;
-            border: 1px solid #e2e8f0;
-            border-radius: 1.25rem; /* More rounded */
-            padding: 1.25rem; /* Larger padding */
-            margin-bottom: 0.85rem;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07); /* Enhanced shadow */
-            text-align: right;
-            cursor: pointer; /* Make it clickable */
-            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-            display: flex; /* For bar visualization */
-            flex-direction: column;
-        }
-        .daily-summary-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
-        }
-        .daily-summary-card h4 {
-            font-size: 1.15rem; /* Larger font */
-            font-weight: 700; /* Bolder */
-            color: #4f46e5;
-            margin-bottom: 0.6rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .daily-summary-card h4 svg { /* Lucide icons in daily cards */
-            width: 20px;
-            height: 20px;
-        }
-        .daily-summary-card .details {
-            font-size: 1rem; /* Slightly larger font */
-            color: #333;
-            margin-bottom: 0.8rem;
-        }
-        .daily-summary-card .total {
-            font-weight: 700;
-            color: #1e3a8a;
-            margin-right: 0.5rem;
-        }
-        .daily-spending-bar-container {
-            width: 100%;
-            background-color: #e0e7ff;
-            border-radius: 0.5rem;
-            height: 10px;
-            overflow: hidden;
-        }
-        .daily-spending-bar {
-            height: 100%;
-            background-color: #4f46e5;
-            border-radius: 0.5rem;
-            transition: width 0.5s ease-out, background-color 0.3s ease-out;
-        }
-        .daily-spending-bar.low { background-color: #22c55e; } /* Green */
-        .daily-spending-bar.medium { background-color: #fbbf24; } /* Yellow */
-        .daily-spending-bar.high { background-color: #ef4444; } /* Red */
-
-
-        /* Confirmation Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7); /* Darker overlay */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-        }
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        .modal-content {
-            background-color: #fff;
-            padding: 2rem; /* Larger padding */
-            border-radius: 1.5rem; /* More rounded */
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4); /* Deeper shadow */
-            text-align: center;
-            max-width: 400px; /* Wider modal */
-            width: 90%;
-            transform: translateY(-30px); /* Larger initial translateY */
-            opacity: 0;
-            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.3s ease-in-out; /* Bounce effect */
-        }
-        .modal-overlay.active .modal-content {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        .modal-buttons {
-            display: flex;
-            justify-content: space-around;
-            gap: 1.5rem; /* Larger gap */
-            margin-top: 2rem; /* Larger margin */
-        }
-        .modal-buttons button {
-            flex: 1;
-            padding: 0.85rem; /* Larger padding */
-            font-weight: 700;
-        }
-
-        /* Toast Message */
-        .toast-message {
-            position: fixed;
-            bottom: 2.5rem; /* Higher from bottom */
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #333;
-            color: #fff;
-            padding: 0.85rem 1.75rem; /* Larger padding */
-            border-radius: 1.25rem; /* More rounded */
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-            z-index: 1001;
-            white-space: nowrap;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-        .toast-message.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Fade-out animation for deleted items */
-        .fade-out {
-            opacity: 0;
-            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
-            transform: translateX(-100%);
-        }
-
-        /* Loading Overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.8);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1002;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-        }
-        .loading-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-top: 4px solid #4f46e5;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        .loading-text {
-            margin-top: 1rem;
-            font-size: 1.1rem;
-            color: #4f46e5;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+<html lang="ar" dir="rtl">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>تطبيق مصاريفي - تتبع النفقات اليومية</title>  
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>  
+    <script src="https://unpkg.com/lucide@latest"></script>  
+    <style>  
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; color: #333; direction: rtl; }  
+        .main-container { max-width: 600px; margin: 0 auto; padding: 1rem; background-color: #fff; border-radius: 1.5rem; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08); min-height: 100vh; display: flex; flex-direction: column; animation: fadeIn 0.5s ease-out; }  
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }  
+        .tab-button { padding: 0.85rem 1.75rem; border-radius: 1.25rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease-in-out; background-color: #e0e7ff; color: #4f46e5; text-align: center; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); }  
+        .tab-button.active { background-color: #4f46e5; color: #fff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); transform: translateY(-2px); }  
+        .tab-button:hover:not(.active) { background-color: #c7d2fe; transform: translateY(-1px); }  
+        .tab-content { display: none; padding-top: 1rem; opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out; }  
+        .tab-content.active { display: block; opacity: 1; transform: translateY(0); }  
+        input[type="text"], input[type="number"], input[type="date"] { padding: 0.85rem 1.25rem; border: 1px solid #cbd5e1; border-radius: 1rem; font-size: 1rem; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; text-align: right; background-color: #fbfdff; }  
+        input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25); }  
+        button { padding: 0.85rem 1.75rem; border-radius: 1.25rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s; background-color: #4f46e5; color: #fff; border: none; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); text-align: center; }  
+        button:hover { background-color: #4338ca; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); }  
+        .secondary-button { background-color: #6b7280; }  
+        .secondary-button:hover { background-color: #4b5563; }  
+        .delete-button { background-color: #ef4444; }  
+        .delete-button:hover { background-color: #dc2626; }  
+        .expense-item { background-color: #fbfdff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.85rem 1.25rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06); cursor: pointer; transition: all 0.2s ease; }  
+        .expense-item:hover { background-color: #eef2f6; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }  
+        .expense-item .name { font-weight: 500; color: #333; font-size: 1.05rem; }  
+        .expense-item .details .price { margin-right: 0.6rem; font-weight: 600; color: #4f46e5; }  
+        .expense-item .details .category { font-size: 0.8rem; background-color: #bfdbfe; color: #1e3a8a; padding: 0.3rem 0.6rem; border-radius: 0.75rem; margin-left: 0.6rem; font-weight: 500; }  
+        .summary-card { background-color: #fbfdff; border: 1px solid #e2e8f0; border-radius: 1.25rem; padding: 1.5rem; margin-bottom: 1.25rem; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); transition: all 0.2s ease; }  
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1002; transition: opacity 0.3s ease-in-out; }  
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }  
+        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }  
+        .loading-text { margin-top: 1rem; font-size: 1.1rem; color: #4f46e5; }  
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }  
+        .toast-message { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background-color: #333; color: #fff; padding: 0.85rem 1.75rem; border-radius: 1.25rem; transition: bottom 0.5s ease-in-out; z-index: 1001; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }  
+        .toast-message.show { bottom: 2.5rem; }  
+        .fade-out { opacity: 0; transition: opacity 0.5s ease-out, transform 0.5s ease-out; transform: translateX(-100%); }  
     </style>
-</head>
-<body>
-    <div class="container">
-        <h1 class="text-3xl font-bold text-center mb-8 text-blue-700">تطبيق مصاريفي 💰</h1>
-        <div id="userIdDisplay" class="text-sm text-gray-500 mb-4">معرف المستخدم: <span id="currentUserId"></span></div>
-
-        <!-- Tab Navigation -->
-        <div class="flex justify-around bg-blue-100 p-2 rounded-2xl mb-8 shadow-inner">
-            <button id="dailyTabBtn" class="tab-button active flex-1 mx-1">
-                <i data-lucide="calendar-days" class="inline-block align-middle ml-2"></i> اليوم
-            </button>
-            <button id="monthlyTabBtn" class="tab-button flex-1 mx-1">
-                <i data-lucide="bar-chart-2" class="inline-block align-middle ml-2"></i> الملخص الشهري
-            </button>
-        </div>
-
-        <!-- Daily Input Page -->
-        <div id="dailyPage" class="tab-content active flex-grow">
-            <!-- Date selection for current entry -->
-            <div class="mb-6 bg-blue-50 p-5 rounded-2xl shadow-md">
-                <label for="expenseDate" class="block text-sm font-medium text-gray-700 mb-2 text-right">التاريخ:</label>
-                <div class="flex items-center gap-2">
-                    <input type="date" id="expenseDate" class="focus:border-blue-500 flex-grow">
-                    <button id="yesterdayDateBtn" class="secondary-button px-4 py-2 rounded-xl text-sm whitespace-nowrap">
-                        <i data-lucide="chevron-left" class="inline-block align-middle"></i> الأمس
-                    </button>
-                    <button id="todayDateBtn" class="secondary-button px-4 py-2 rounded-xl text-sm whitespace-nowrap">
-                        <i data-lucide="calendar" class="inline-block align-middle"></i> اليوم
-                    </button>
-                </div>
-                <h3 class="text-lg font-semibold text-blue-700 mt-4 text-right">مصروفات لـ <span id="selectedDateDisplay" class="text-blue-900"></span>:</h3>
-            </div>
-
-            <!-- Product Entry for selected date -->
-            <div class="p-5 bg-blue-50 rounded-2xl shadow-md mb-6">
-                <div class="mb-5 relative">
-                    <label for="productName" class="block text-sm font-medium text-gray-700 mb-2 text-right">اسم المنتج:</label>
-                    <input type="text" id="productName" placeholder="مثال: سجاير، خضروات طازجة" class="focus:border-blue-500">
-                    <div id="autocompleteSuggestions" class="autocomplete-suggestions hidden"></div>
-                </div>
-
-                <div class="mb-5">
-                    <label for="productPrice" class="block text-sm font-medium text-gray-700 mb-2 text-right">السعر (درهم إماراتي):</label>
-                    <input type="number" id="productPrice" placeholder="مثال: 20.00" step="0.01" class="focus:border-blue-500">
-                </div>
-
-                <div class="mb-5">
-                    <label for="categoryDisplay" class="block text-sm font-medium text-gray-700 mb-2 text-right">الفئة المقترحة:</label>
-                    <div id="categoryDisplay" class="bg-blue-100 text-blue-800 text-base font-semibold py-3 px-4 rounded-xl text-right">
-                        (تلقائي)
-                    </div>
-                </div>
-
-                <div class="mb-6 flex justify-center flex-wrap gap-3">
-                    <button id="addExpense" class="flex-1 py-3 text-lg min-w-[150px]">
-                        <i data-lucide="plus" class="inline-block align-middle ml-2"></i> إضافة مصروف
-                    </button>
-                    <button id="cancelEditBtn" class="secondary-button flex-1 py-3 text-lg hidden min-w-[150px]">
-                        <i data-lucide="x" class="inline-block align-middle ml-2"></i> إلغاء التعديل
-                    </button>
-                </div>
-                
-                <!-- Quick Suggestion Buttons -->
-                <div class="mb-6 border-t border-blue-200 pt-5">
-                    <h3 class="text-md font-semibold text-gray-700 mb-3 text-right">اقتراحات سريعة:</h3>
-                    <div id="quickSuggestions" class="flex flex-wrap gap-2 justify-end">
-                        <!-- Suggestions will be dynamically loaded here -->
-                    </div>
-                </div>
-
-                <!-- List of expenses for the CURRENTLY SELECTED DATE -->
-                <h4 class="text-md font-semibold text-gray-800 mb-4 text-right border-t border-blue-200 pt-5">مصاريف هذا التاريخ:</h4>
-                <div id="currentDateExpenseList" class="mb-4">
-                    <!-- Specific expenses for the selected date will be listed here -->
-                </div>
-                <div class="mt-4 p-4 bg-blue-100 text-blue-900 font-bold text-xl rounded-xl text-center shadow-sm">
-                    إجمالي هذا التاريخ: <span id="currentDateTotal">0.00 درهم إماراتي</span>
-                </div>
-            </div>
-
-            <!-- Daily Summary Cards for ALL recorded days -->
-            <h3 class="text-lg font-semibold text-gray-800 mb-4 text-right">ملخص مصاريف الأيام:</h3>
-            <div id="dailySummaryCards" class="flex-grow overflow-y-auto pb-4">
-                <!-- Daily summary cards will be displayed here -->
-            </div>
-        </div>
-
-        <!-- Monthly Summary Page -->
-        <div id="monthlyPage" class="tab-content flex-grow">
-            <div class="summary-card">
-                <h3><i data-lucide="pie-chart" class="inline-block align-middle ml-2"></i> ملخص الإحصائيات الشهرية</h3>
-                <p>إجمالي الشهر: <span id="monthlyTotal">0.00 درهم إماراتي</span></p>
-                <p>المتوسط اليومي: <span id="dailyAverage">0.00 درهم إماراتي</span></p>
-                <p>الأيام المسجلة: <span id="daysRecorded">0</span></p>
-            </div>
-
-            <div class="summary-card">
-                <h3><i data-lucide="list-ordered" class="inline-block align-middle ml-2"></i> أعلى فئات الإنفاق</h3>
-                <ul id="topCategoriesList" class="category-list">
-                    <!-- Top categories will be displayed here -->
-                </ul>
-            </div>
-
-            <div class="summary-card">
-                <h3><i data-lucide="history" class="inline-block align-middle ml-2"></i> تاريخ المصاريف (آخر 10 أيام)</h3>
-                <div id="expenseHistoryList">
-                    <!-- Expense history will be displayed here -->
-                </div>
-            </div>
-
-            <!-- Export/Import Data Buttons -->
-            <div class="summary-card">
-                <h3><i data-lucide="database" class="inline-block align-middle ml-2"></i> إدارة البيانات</h3>
-                <div class="flex flex-col gap-3">
-                    <button id="exportDataBtn" class="py-3 secondary-button w-full">
-                        <i data-lucide="download" class="inline-block align-middle ml-2"></i> تصدير البيانات
-                    </button>
-                    <input type="file" id="importFileInput" accept=".json" class="hidden" />
-                    <button id="importDataBtn" class="py-3 secondary-button w-full">
-                        <i data-lucide="upload" class="inline-block align-middle ml-2"></i> استيراد البيانات
-                    </button>
-                    <button id="clearAllDataBtn" class="py-3 delete-button w-full">
-                        <i data-lucide="trash-2" class="inline-block align-middle ml-2"></i> مسح جميع البيانات
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirmation Modal (Unified) -->
-    <div id="confirmModalOverlay" class="modal-overlay">
-        <div class="modal-content">
-            <h3 class="text-2xl font-bold mb-4 text-blue-700">تأكيد الإجراء</h3>
-            <p id="confirmModalText" class="mb-6 text-gray-700 text-lg">هل أنت متأكد؟</p>
-            <div class="modal-buttons">
-                <button id="confirmActionBtn" class="delete-button">تأكيد</button>
-                <button id="cancelActionBtn" class="secondary-button">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Message -->
-    <div id="toastMessage" class="toast-message"></div>
-
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="spinner"></div>
-        <div class="loading-text" id="loadingText">جاري التحميل...</div>
-    </div>
-
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, onSnapshot, orderBy, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- Firebase Initialization ---
-        let app;
-        let db;
-        let auth;
-        let userId = null;
-        let authReady = false; // Flag to indicate if auth is ready
-
-        // Global variables provided by Canvas environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // --- Global Variables and Constants ---
-        // Firestore collection path will now use the app ID and user ID
-        let expensesCollectionRef;
-
-        const MAX_HISTORY_DAYS = 10;
-
-        const DEFAULT_CATEGORIES = [
-            { name: 'منتجات الألبان', keywords: ['حليب', 'لبن', 'جبنة', 'زبادي', 'قشطة', 'زبدة', 'زبده'] },
-            { name: 'اللحوم', keywords: ['لحم', 'دجاج', 'سمك', 'برجر', 'نقانق', 'كباب', 'دجاجة'] },
-            { name: 'الخضروات', keywords: ['خضار', 'فاكهة', 'طازجة', 'بندورة', 'خيار', 'تفاح', 'برتقال', 'موز', 'بطاطا', 'جزر'] },
-            { name: 'المأكولات الجاهزة', keywords: ['وجبة', 'مطعم', 'سريع', 'بيتزا', 'شاورما', 'برجر', 'ساندويتش', 'باستا', 'جاهزة'] },
-            { name: 'المشروبات', keywords: ['عصير', 'ماء', 'صودا', 'قهوة', 'شاي', 'مشروب', 'كولا', 'بيبسي', 'مياه'] },
-            { name: 'التدخين', keywords: ['سجاير', 'دخان', 'شيشة', 'معسل'] },
-            { name: 'المعلبات', keywords: ['معلبات', 'تونا', 'فول', 'حمص', 'مربى', 'عدس معلب'] },
-            { name: 'التوابل', keywords: ['بهارات', 'فلفل', 'كمون', 'ملح', 'كركم', 'بابريكا'] },
-            { name: 'أخرى', keywords: [] } // Default fallback category
-        ];
-
-        let expenses = []; // Array to store all expense objects (synced with Firestore)
-        let productMemory = {}; // Local cache for autocomplete and quick suggestions
-        let isEditing = false; // Flag to indicate if an item is being edited
-        let editingExpenseId = null; // Stores the Firestore doc ID of the expense being edited
-
-        // --- DOM Elements ---
-        const dailyTabBtn = document.getElementById('dailyTabBtn');
-        const monthlyTabBtn = document.getElementById('monthlyTabBtn');
-        const dailyPage = document.getElementById('dailyPage');
-        const monthlyPage = document.getElementById('monthlyPage');
-
-        const productNameInput = document.getElementById('productName');
-        const productPriceInput = document.getElementById('productPrice');
-        const expenseDateInput = document.getElementById('expenseDate'); // Date input
-        const todayDateBtn = document.getElementById('todayDateBtn'); // New Today button
-        const yesterdayDateBtn = document.getElementById('yesterdayDateBtn'); // New Yesterday button
-        const selectedDateDisplay = document.getElementById('selectedDateDisplay'); // To show selected date in input card
-        const categoryDisplay = document.getElementById('categoryDisplay');
-        const addExpenseBtn = document.getElementById('addExpense');
-        const cancelEditBtn = document.getElementById('cancelEditBtn'); // New Cancel Edit button
-        const currentDateExpenseList = document.getElementById('currentDateExpenseList'); // Specific items for selected date
-        const currentDateTotalDisplay = document.getElementById('currentDateTotal'); // Total for selected date
-        const dailySummaryCardsContainer = document.getElementById('dailySummaryCards'); // All daily summaries
-        const quickSuggestionsContainer = document.getElementById('quickSuggestions');
-        const autocompleteSuggestions = document.getElementById('autocompleteSuggestions');
-
-        const monthlyTotalDisplay = document.getElementById('monthlyTotal');
-        const dailyAverageDisplay = document.getElementById('dailyAverage');
-        const daysRecordedDisplay = document.getElementById('daysRecorded');
-        const topCategoriesList = document.getElementById('topCategoriesList');
-        const expenseHistoryList = document.getElementById('expenseHistoryList');
-
-        // Modal Elements (unified for all confirmations)
-        const confirmModalOverlay = document.getElementById('confirmModalOverlay');
-        const confirmModalText = document.getElementById('confirmModalText');
-        const confirmActionBtn = document.getElementById('confirmActionBtn');
-        const cancelActionBtn = document.getElementById('cancelActionBtn');
-        let pendingConfirmAction = null; // Stores the function to call on confirm
-
-        // Toast Message Element
-        const toastMessageElement = document.getElementById('toastMessage');
-
-        // Loading Overlay Elements
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        const loadingText = document.getElementById('loadingText');
-
-        // Export/Import/Clear All Buttons
-        const exportDataBtn = document.getElementById('exportDataBtn');
-        const importDataBtn = document.getElementById('importDataBtn');
-        const importFileInput = document.getElementById('importFileInput');
-        const clearAllDataBtn = document.getElementById('clearAllDataBtn');
-        const currentUserIdDisplay = document.getElementById('currentUserId');
-
-
-        // --- Helper Functions ---
-
-        /**
-         * Shows the loading overlay with an optional message.
-         * @param {string} message - The message to display (default: 'جاري التحميل...').
-         */
-        function showLoading(message = 'جاري التحميل...') {
-            loadingText.textContent = message;
-            loadingOverlay.classList.add('active');
-        }
-
-        /**
-         * Hides the loading overlay.
-         */
-        function hideLoading() {
-            loadingOverlay.classList.remove('active');
-        }
-
-        /**
-         * Shows a toast message.
-         * @param {string} message - The message to display.
-         * @param {number} duration - Duration in milliseconds (default: 3000).
-         */
-        function showToast(message, duration = 3000) {
-            toastMessageElement.textContent = message;
-            toastMessageElement.classList.add('active');
-            setTimeout(() => {
-                toastMessageElement.classList.remove('active');
-            }, duration);
-        }
-
-        /**
-         * Shows the confirmation modal.
-         * @param {string} message - The message to display in the modal.
-         * @param {function} onConfirmCallback - Callback function to execute on confirmation.
-         * @param {string} confirmButtonText - Optional text for the confirm button.
-         */
-        function showConfirmModal(message, onConfirmCallback, confirmButtonText = 'تأكيد') {
-            confirmModalText.textContent = message;
-            confirmActionBtn.textContent = confirmButtonText;
-            confirmModalOverlay.classList.add('active');
-            pendingConfirmAction = onConfirmCallback; // Store the callback
-
-            // Set up event listeners for modal buttons
-            confirmActionBtn.onclick = () => {
-                if (pendingConfirmAction) {
-                    pendingConfirmAction(true); // Pass true to confirm action
-                }
-                hideConfirmModal();
-            };
-            cancelActionBtn.onclick = () => {
-                if (pendingConfirmAction) {
-                    pendingConfirmAction(false); // Pass false to cancel action
-                }
-                hideConfirmModal();
-            };
-        }
-
-        /**
-         * Hides the confirmation modal.
-         */
-        function hideConfirmModal() {
-            confirmModalOverlay.classList.remove('active');
-            confirmActionBtn.onclick = null; // Remove listeners to prevent memory leaks
-            cancelActionBtn.onclick = null;
-            pendingConfirmAction = null;
-        }
-
-        /**
-         * Generates a unique ID (not strictly needed with Firestore's auto-ID but kept for consistency if exporting/importing)
-         * @returns {string} A unique ID.
-         */
-        function generateUniqueId() {
-            return '_' + Math.random().toString(36).substr(2, 9);
-        }
-
-        /**
-         * Gets the date string for today, yesterday, or a specific date.
-         * @param {string} type - 'today', 'yesterday', or a Date object/string.
-         * @returns {string} The formatted date string.
-         */
-        function getDateString(type = 'today', dateObj = null) {
-            let date = dateObj instanceof Date ? dateObj : new Date();
-            if (type === 'yesterday') {
-                date.setDate(date.getDate() - 1);
-            }
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        /**
-         * Formats a number as UAE Dirham currency.
-         * @param {number} amount - The amount to format.
-         * @returns {string} The formatted currency string.
-         */
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('ar-AE', {
-                style: 'currency',
-                currency: 'AED',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }).format(amount);
-        }
-
-        /**
-         * Rebuilds productMemory from the current expenses array.
-         */
-        function rebuildProductMemoryFromExpenses() {
-            productMemory = {}; // Clear existing memory
-            expenses.forEach(exp => {
-                if (productMemory[exp.name]) {
-                    productMemory[exp.name].lastPrice = exp.price;
-                    productMemory[exp.name].lastCategory = exp.category;
-                    productMemory[exp.name].frequency = (productMemory[exp.name].frequency || 0) + 1;
-                } else {
-                    productMemory[exp.name] = { lastPrice: exp.price, lastCategory: exp.category, frequency: 1 };
-                }
-            });
-        }
-
-        /**
-         * Suggests a category based on the product name using keywords and product memory.
-         * @param {string} productName - The name of the product.
-         * @returns {string} The suggested category or 'أخرى' (Other) if no match.
-         */
-        function suggestCategory(productName) {
-            const lowerProductName = productName.toLowerCase();
-
-            // First, check product memory for exact match or close match
-            for (const name in productMemory) {
-                if (lowerProductName.includes(name.toLowerCase()) || name.toLowerCase().includes(lowerProductName)) {
-                    return productMemory[name].lastCategory;
-                }
-            }
-
-            // If not found in memory, use default categories
-            for (const category of DEFAULT_CATEGORIES) {
-                for (const keyword of category.keywords) {
-                    if (lowerProductName.includes(keyword.toLowerCase())) {
-                        return category.name;
-                    }
-                }
-            }
-            return 'أخرى'; // Default category if no match
-        }
-
-        /**
-         * Renders detailed expenses for the currently selected date.
-         */
-        function renderCurrentDateExpenses() {
-            const selectedDate = expenseDateInput.value;
-            selectedDateDisplay.textContent = selectedDate; // Update display in input card
-            // Filter and sort expenses for the selected date, then render
-            const expensesForSelectedDate = expenses
-                .filter(exp => exp.date === selectedDate)
-                .sort((a, b) => new Date(a.timestamp || a.date) - new Date(b.timestamp || b.date)); // Sort by timestamp
-
-            currentDateExpenseList.innerHTML = '';
-            let totalForSelectedDate = 0;
-
-            if (expensesForSelectedDate.length === 0) {
-                currentDateExpenseList.innerHTML = `
-                    <p class="text-center text-gray-500 py-4 text-sm">لا توجد مصاريف لهذا التاريخ بعد. أضف واحداً!</p>
-                `;
-            } else {
-                expensesForSelectedDate.forEach(exp => {
-                    totalForSelectedDate += exp.price;
-                    const expenseItem = document.createElement('div');
-                    expenseItem.className = 'expense-item';
-                    expenseItem.dataset.id = exp.id; // Store Firestore doc ID
-                    expenseItem.innerHTML = `
-                        <div class="name text-right">${escapeHTML(exp.name)}</div>
-                        <div class="details flex items-center justify-start">
-                            <span class="category">${escapeHTML(exp.category)}</span>
-                            <span class="price">${formatCurrency(exp.price)}</span>
-                            <button class="delete-btn text-red-500 hover:text-red-700 ml-2 p-1 rounded-full" data-id="${exp.id}" aria-label="حذف المصروف">
-                                <i data-lucide="trash-2" class="w-5 h-5"></i>
-                            </button>
-                        </div>
-                    `;
-                    currentDateExpenseList.appendChild(expenseItem);
-                });
-            }
-            currentDateTotalDisplay.textContent = formatCurrency(totalForSelectedDate);
-
-            // Add event listeners for delete buttons
-            document.querySelectorAll('#currentDateExpenseList .delete-btn').forEach(button => {
-                button.onclick = (event) => {
-                    event.stopPropagation(); // Prevent expense-item click when delete button is clicked
-                    const idToDelete = event.currentTarget.dataset.id;
-                    showConfirmModal(`هل أنت متأكد أنك تريد حذف "${expenses.find(e => e.id === idToDelete)?.name}"؟`, (confirmed) => {
-                        if (confirmed) {
-                            deleteExpense(idToDelete);
-                        }
-                    }, 'نعم، احذف');
-                };
-            });
-
-            // Add event listeners for editing expense items
-            document.querySelectorAll('#currentDateExpenseList .expense-item').forEach(item => {
-                item.onclick = (event) => {
-                    // Only activate edit if not clicking the delete button itself
-                    if (!event.target.closest('.delete-btn')) {
-                        editExpense(item.dataset.id);
-                    }
-                };
-            });
-            lucide.createIcons(); // Re-render Lucide icons
-        }
-
-        /**
-         * Escapes HTML to prevent XSS.
-         * @param {string} str - The string to escape.
-         * @returns {string} The escaped string.
-         */
-        function escapeHTML(str) {
-            const div = document.createElement('div');
-            div.appendChild(document.createTextNode(str));
-            return div.innerHTML;
-        }
-
-        /**
-         * Renders daily summary cards for all recorded days.
-         */
-        function renderDailySummaries() {
-            dailySummaryCardsContainer.innerHTML = '';
-            
-            // Group expenses by date and calculate total for each day
-            const dailyTotalsMap = new Map(); // Map<string (date), { total: number, count: number }>
-            expenses.forEach(exp => {
-                const date = exp.date;
-                if (!dailyTotalsMap.has(date)) {
-                    dailyTotalsMap.set(date, { total: 0, count: 0 });
-                }
-                const dayData = dailyTotalsMap.get(date);
-                dayData.total += exp.price;
-                dayData.count += 1;
-            });
-
-            // Convert map to array and sort by date descending
-            const sortedDailySummaries = Array.from(dailyTotalsMap.entries())
-                .map(([date, data]) => ({ date, total: data.total, count: data.count }))
-                .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date descending
-
-            if (sortedDailySummaries.length === 0) {
-                dailySummaryCardsContainer.innerHTML = `
-                    <p class="text-center text-gray-500 py-8">
-                        لا توجد مصاريف مسجلة بعد. أضف واحداً لترى ملخصات الأيام هنا!
-                        <i data-lucide="hand-pointer" class="inline-block align-middle mr-1"></i>
-                    </p>
-                `;
-            } else {
-                // Determine the max total for the spending bar visualization
-                const maxTotal = sortedDailySummaries.reduce((max, summary) => Math.max(max, summary.total), 0);
-
-                sortedDailySummaries.forEach(summary => {
-                    const card = document.createElement('div');
-                    card.className = 'daily-summary-card';
-                    card.dataset.date = summary.date; // Store date for click event
-
-                    const spendingPercentage = maxTotal > 0 ? (summary.total / maxTotal) * 100 : 0;
-                    let barColorClass = '';
-                    if (spendingPercentage < 33) {
-                        barColorClass = 'low'; // Green
-                    } else if (spendingPercentage < 66) {
-                        barColorClass = 'medium'; // Yellow
-                    } else {
-                        barColorClass = 'high'; // Red
-                    }
-
-                    card.innerHTML = `
-                        <h4><i data-lucide="calendar-check" class="inline-block align-middle ml-2"></i> ${summary.date}</h4>
-                        <div class="details">
-                            إجمالي: <span class="total">${formatCurrency(summary.total)}</span>
-                            <span class="ml-4">عدد العناصر: ${summary.count}</span>
-                        </div>
-                        <div class="daily-spending-bar-container mt-2">
-                            <div class="daily-spending-bar ${barColorClass}" style="width: ${spendingPercentage}%;"></div>
-                        </div>
-                    `;
-                    dailySummaryCardsContainer.appendChild(card);
-                });
-
-                // Add event listeners for clickable daily summary cards
-                document.querySelectorAll('.daily-summary-card').forEach(card => {
-                    card.addEventListener('click', (event) => {
-                        const dateToLoad = event.currentTarget.dataset.date;
-                        expenseDateInput.value = dateToLoad; // Set the date input
-                        renderCurrentDateExpenses(); // Refresh the expenses for that date
-                        dailyTabBtn.click(); // Switch to daily tab if not already there
-                    });
-                });
-            }
-            lucide.createIcons(); // Re-render Lucide icons
-        }
-
-        /**
-         * Renders quick suggestion buttons based on frequently bought items from productMemory.
-         */
-        function updateQuickSuggestions() {
-            quickSuggestionsContainer.innerHTML = '';
-            const sortedProducts = Object.entries(productMemory)
-                .sort(([, a], [, b]) => b.frequency - a.frequency)
-                .slice(0, 5); // Show top 5 frequent items
-
-            if (sortedProducts.length === 0) {
-                quickSuggestionsContainer.innerHTML = `
-                    <p class="text-gray-500 text-sm w-full text-center">
-                        ابدأ بإضافة المصاريف لترى الاقتراحات السريعة هنا.
-                    </p>
-                `;
-                return;
-            }
-
-            sortedProducts.forEach(([name, data]) => {
-                const button = document.createElement('button');
-                button.className = 'suggestion-button';
-                button.textContent = `${name} (${formatCurrency(data.lastPrice)})`;
-                button.onclick = () => {
-                    productNameInput.value = name;
-                    productPriceInput.value = data.lastPrice;
-                    categoryDisplay.textContent = data.lastCategory;
-                    productPriceInput.focus();
-                };
-                quickSuggestionsContainer.appendChild(button);
-            });
-        }
-
-        /**
-         * Handles the addition or update of an expense and saves it to Firestore.
-         */
-        async function addOrUpdateExpense() {
-            const productName = productNameInput.value.trim();
-            const productPrice = parseFloat(productPriceInput.value);
-            const expenseDate = expenseDateInput.value; // Get selected date
-            const suggestedCategory = categoryDisplay.textContent.replace('(تلقائي)', '').trim();
-
-            // Basic input validation
-            if (!productName) {
-                showToast('الرجاء إدخال اسم المنتج.', 3000);
-                productNameInput.focus();
-                return;
-            }
-            if (isNaN(productPrice) || productPrice <= 0) {
-                showToast('الرجاء إدخال سعر صحيح أكبر من صفر.', 3000);
-                productPriceInput.focus();
-                return;
-            }
-            if (!expenseDate) {
-                showToast('الرجاء اختيار التاريخ.', 3000);
-                expenseDateInput.focus();
-                return;
-            }
-            if (!suggestedCategory || suggestedCategory === '(تلقائي)') {
-                showToast('الفئة غير محددة. الرجاء إدخال اسم منتج واضح أو تحديد فئة يدوياً.', 3000);
-                productNameInput.focus();
-                return;
-            }
-
-            showLoading(isEditing ? 'جاري تحديث المصروف...' : 'جاري إضافة المصروف...');
-            try {
-                if (isEditing) {
-                    // Update existing expense in Firestore
-                    const expenseDocRef = doc(db, expensesCollectionRef.path, editingExpenseId);
-                    await updateDoc(expenseDocRef, {
-                        date: expenseDate,
-                        name: productName,
-                        price: productPrice,
-                        category: suggestedCategory,
-                        timestamp: new Date().toISOString() // Update timestamp for re-sorting
-                    });
-                    showToast('تم تحديث المصروف بنجاح!', 2000);
-                } else {
-                    // Add new expense to Firestore
-                    const newExpense = {
-                        date: expenseDate,
-                        name: productName,
-                        price: productPrice,
-                        category: suggestedCategory,
-                        timestamp: new Date().toISOString()
-                    };
-                    await addDoc(expensesCollectionRef, newExpense);
-                    showToast('تم إضافة مصروف جديد!', 2000);
-                }
-
-                // Clear input fields after adding/updating
-                productNameInput.value = '';
-                productPriceInput.value = '';
-                categoryDisplay.textContent = '(تلقائي)';
-                productNameInput.focus();
-                cancelEdit(); // Reset edit mode
-            } catch (error) {
-                console.error("Error adding/updating expense:", error);
-                showToast('حدث خطأ أثناء حفظ المصروف. الرجاء المحاولة مرة أخرى.', 3000);
-            } finally {
-                hideLoading();
-            }
-        }
-
-        /**
-         * Populates the input fields for editing an expense.
-         * @param {string} id - The Firestore doc ID of the expense to edit.
-         */
-        function editExpense(id) {
-            const expenseToEdit = expenses.find(exp => exp.id === id);
-            if (expenseToEdit) {
-                productNameInput.value = expenseToEdit.name;
-                productPriceInput.value = expenseToEdit.price;
-                expenseDateInput.value = expenseToEdit.date;
-                categoryDisplay.textContent = expenseToEdit.category;
-                
-                isEditing = true;
-                editingExpenseId = id;
-                addExpenseBtn.innerHTML = '<i data-lucide="edit" class="inline-block align-middle ml-2"></i> تحديث مصروف';
-                cancelEditBtn.classList.remove('hidden');
-                productNameInput.focus();
-                lucide.createIcons(); // Re-render Lucide icons
-            }
-        }
-
-        /**
-         * Cancels the current edit operation and resets the form.
-         */
-        function cancelEdit() {
-            isEditing = false;
-            editingExpenseId = null;
-            productNameInput.value = '';
-            productPriceInput.value = '';
-            categoryDisplay.textContent = '(تلقائي)';
-            addExpenseBtn.innerHTML = '<i data-lucide="plus" class="inline-block align-middle ml-2"></i> إضافة مصروف';
-            cancelEditBtn.classList.add('hidden');
-            productNameInput.focus();
-            lucide.createIcons(); // Re-render Lucide icons
-        }
-
-        /**
-         * Deletes an expense from Firestore.
-         * @param {string} id - The Firestore doc ID of the expense to delete.
-         */
-        async function deleteExpense(id) {
-            const itemElement = document.querySelector(`.expense-item[data-id="${id}"]`);
-            if (itemElement) {
-                itemElement.classList.add('fade-out'); // Add fade-out class for animation
-                // Note: The actual Firestore deletion happens, and then onSnapshot will re-render
-                // This transitionend listener is just for a smoother visual before the full re-render
-                itemElement.addEventListener('transitionend', async function removeElement() {
-                    itemElement.removeEventListener('transitionend', removeElement); // Clean up listener
-                    showLoading('جاري حذف المصروف...');
-                    try {
-                        await deleteDoc(doc(db, expensesCollectionRef.path, id));
-                        showToast('تم حذف المصروف بنجاح!', 2000);
-                        if (editingExpenseId === id) {
-                            cancelEdit();
-                        }
-                    } catch (error) {
-                        console.error("Error deleting expense:", error);
-                        showToast('حدث خطأ أثناء حذف المصروف. الرجاء المحاولة مرة أخرى.', 3000);
-                    } finally {
-                        hideLoading();
-                    }
-                });
-            } else {
-                 // Fallback if element not found (shouldn't happen often with onSnapshot)
-                showLoading('جاري حذف المصروف...');
-                try {
-                    await deleteDoc(doc(db, expensesCollectionRef.path, id));
-                    showToast('تم حذف المصروف بنجاح!', 2000);
-                    if (editingExpenseId === id) {
-                        cancelEdit();
-                    }
-                } catch (error) {
-                    console.error("Error deleting expense:", error);
-                    showToast('حدث خطأ أثناء حذف المصروف. الرجاء المحاولة مرة أخرى.', 3000);
-                } finally {
-                    hideLoading();
-                }
-            }
-        }
-
-        /**
-         * Exports all expense data to a JSON file.
-         */
-        function exportData() {
-            if (expenses.length === 0) {
-                showToast('لا توجد بيانات لتصديرها.', 3000);
-                return;
-            }
-            const dataStr = JSON.stringify(expenses, null, 2); // Pretty print JSON
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `my_expenses_backup_${getDateString('today')}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast('تم تصدير البيانات بنجاح!', 2000);
-        }
-
-        /**
-         * Imports expense data from a JSON file.
-         */
-        function importData() {
-            importFileInput.click(); // Trigger file input click
-        }
-
-        /**
-         * Handles the selected file for import and adds to Firestore.
-         * @param {Event} event - The change event from the file input.
-         */
-        async function handleImportFile(event) {
-            const file = event.target.files[0];
-            if (!file) {
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const importedExpenses = JSON.parse(e.target.result);
-                    
-                    if (!Array.isArray(importedExpenses)) {
-                        showToast('صيغة ملف الاستيراد غير صالحة. يجب أن يكون مصفوفة من المصاريف.', 4000);
-                        return;
-                    }
-
-                    showConfirmModal('هل أنت متأكد من استيراد البيانات؟ سيتم إضافة المصاريف الجديدة وتجاهل المكررة.', async (confirmed) => {
-                        if (confirmed) {
-                            showLoading('جاري استيراد البيانات...');
-                            let newItemsAdded = 0;
-                            let duplicatesIgnored = 0;
-                            let invalidItemsIgnored = 0;
-
-                            try {
-                                const existingExpensesData = (await getDocs(expensesCollectionRef)).docs.map(doc => doc.data());
-
-                                for (const importedExp of importedExpenses) {
-                                    // Basic validation for imported expense structure
-                                    const isValid = importedExp &&
-                                                    typeof importedExp.name === 'string' && importedExp.name.trim() !== '' &&
-                                                    typeof importedExp.price === 'number' && !isNaN(importedExp.price) && importedExp.price > 0 &&
-                                                    typeof importedExp.date === 'string' && importedExp.date.match(/^\d{4}-\d{2}-\d{2}$/) && // YYYY-MM-DD format
-                                                    typeof importedExp.category === 'string' && importedExp.category.trim() !== '';
-
-                                    if (isValid) {
-                                        // Check if this imported expense already exists in Firestore data to avoid true duplicates
-                                        const isDuplicate = existingExpensesData.some(existingExp =>
-                                            existingExp.date === importedExp.date &&
-                                            existingExp.name === importedExp.name &&
-                                            existingExp.price === importedExp.price &&
-                                            existingExp.category === importedExp.category
-                                        );
-
-                                        if (!isDuplicate) {
-                                            // Ensure timestamp is present for proper sorting
-                                            if (!importedExp.timestamp) {
-                                                importedExp.timestamp = new Date().toISOString(); // Use current time if no timestamp
-                                            }
-                                            // Add to Firestore
-                                            await addDoc(expensesCollectionRef, {
-                                                date: importedExp.date,
-                                                name: importedExp.name,
-                                                price: importedExp.price,
-                                                category: importedExp.category,
-                                                timestamp: importedExp.timestamp
-                                            });
-                                            newItemsAdded++;
-                                        } else {
-                                            duplicatesIgnored++;
-                                        }
-                                    } else {
-                                        invalidItemsIgnored++;
-                                        console.warn("Skipping invalid or malformed imported expense item:", importedExp);
-                                    }
-                                }
-
-                                if (newItemsAdded > 0 || duplicatesIgnored > 0 || invalidItemsIgnored > 0) {
-                                    let message = `تم استيراد ${newItemsAdded} مصروف جديد.`;
-                                    if (duplicatesIgnored > 0) message += ` تم تجاهل ${duplicatesIgnored} مصروف مكرر.`;
-                                    if (invalidItemsIgnored > 0) message += ` تم تجاهل ${invalidItemsIgnored} مصروف غير صالح.`;
-                                    showToast(message, 6000); // Longer toast for more info
-                                    // onSnapshot will handle rendering updates
-                                } else {
-                                    showToast('لم يتم العثور على مصاريف جديدة أو صالحة للاستيراد.', 3000);
-                                }
-                            } catch (error) {
-                                console.error("Error importing data to Firestore:", error);
-                                showToast('حدث خطأ أثناء استيراد البيانات إلى السحابة. الرجاء المحاولة مرة أخرى.', 4000);
-                            } finally {
-                                hideLoading();
-                            }
-                        }
-                    }, 'نعم، استورد');
-                } catch (error) {
-                    console.error("Error parsing imported JSON:", error);
-                    showToast('حدث خطأ أثناء قراءة ملف البيانات. تأكد أنه ملف JSON صحيح.', 3000);
-                } finally {
-                    importFileInput.value = ''; // Clear file input
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        /**
-         * Clears all expense data from Firestore.
-         */
-        async function clearAllData() {
-            showConfirmModal('هل أنت متأكد من مسح جميع بياناتك؟ لا يمكن التراجع عن هذا الإجراء.', async (confirmed) => {
-                if (confirmed) {
-                    showLoading('جاري مسح جميع البيانات...');
-                    try {
-                        // Fetch all documents and delete them one by one
-                        const querySnapshot = await getDocs(expensesCollectionRef);
-                        const deletePromises = querySnapshot.docs.map(d => deleteDoc(doc(db, expensesCollectionRef.path, d.id)));
-                        await Promise.all(deletePromises);
-                        
-                        showToast('تم مسح جميع البيانات بنجاح!', 2000);
-                        cancelEdit(); // Exit any edit mode
-                        // onSnapshot will trigger updates
-                    } catch (error) {
-                        console.error("Error clearing all data from Firestore:", error);
-                        showToast('حدث خطأ أثناء مسح جميع البيانات. الرجاء المحاولة مرة أخرى.', 3000);
-                    } finally {
-                        hideLoading();
-                    }
-                }
-            }, 'نعم، امسح');
-        }
-
-        /**
-         * Updates and renders the monthly summary page.
-         */
-        function updateMonthlySummary() {
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-
-            const monthlyExpenses = expenses.filter(exp => {
-                const expDate = new Date(exp.date);
-                return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;
-            });
-
-            let monthlyTotal = 0;
-            const uniqueDays = new Set();
-            const categoryTotals = {};
-            const dailyItemCounts = {};
-
-            monthlyExpenses.forEach(exp => {
-                monthlyTotal += exp.price;
-                uniqueDays.add(exp.date);
-                categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.price;
-                dailyItemCounts[exp.date] = (dailyItemCounts[exp.date] || 0) + 1;
-            });
-
-            const daysRecorded = uniqueDays.size;
-            const dailyAverage = daysRecorded > 0 ? monthlyTotal / daysRecorded : 0;
-
-            monthlyTotalDisplay.textContent = formatCurrency(monthlyTotal);
-            dailyAverageDisplay.textContent = formatCurrency(dailyAverage);
-            daysRecordedDisplay.textContent = daysRecorded;
-
-            // Render Top Categories
-            topCategoriesList.innerHTML = '';
-            const sortedCategories = Object.entries(categoryTotals)
-                .sort(([, a], [, b]) => b - a);
-
-            if (sortedCategories.length === 0) {
-                 topCategoriesList.innerHTML = `
-                    <p class="text-center text-gray-500 py-4">لا توجد بيانات للفئات لهذا الشهر بعد.</p>
-                 `;
-            } else {
-                sortedCategories.forEach(([category, total]) => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <span>${escapeHTML(category)}</span>
-                        <span>${formatCurrency(total)}</span>
-                    `;
-                    topCategoriesList.appendChild(li);
-                });
-            }
-
-            // Render Expense History (last 10 days with recorded expenses)
-            expenseHistoryList.innerHTML = '';
-            // Get all unique dates from expenses, sort them descending, and take the last MAX_HISTORY_DAYS
-            const allUniqueDates = [...new Set(expenses.map(exp => exp.date))].sort().reverse();
-            const recentDates = allUniqueDates.slice(0, MAX_HISTORY_DAYS);
-
-            if (recentDates.length === 0) {
-                expenseHistoryList.innerHTML = `
-                    <p class="text-center text-gray-500 py-4">لا يوجد تاريخ للمصاريف بعد.</p>
-                `;
-            } else {
-                recentDates.forEach(date => {
-                    const itemsForDate = expenses.filter(exp => exp.date === date).length;
-                    const historyItem = document.createElement('div');
-                    historyItem.className = 'history-item';
-                    historyItem.innerHTML = `
-                        <span class="date">${date}</span>
-                        <span class="count">${itemsForDate} عناصر</span>
-                    `;
-                    expenseHistoryList.appendChild(historyItem);
-                });
-            }
-        }
-
-        /**
-         * Handles product name input for auto-complete and price/category recall.
-         */
-        function handleProductNameInput() {
-            const inputVal = productNameInput.value.trim();
-            autocompleteSuggestions.innerHTML = '';
-
-            if (inputVal.length > 0) {
-                const matches = Object.keys(productMemory).filter(name =>
-                    name.toLowerCase().includes(inputVal.toLowerCase())
-                ).slice(0, 5); // Show top 5 matches
-
-                if (matches.length > 0) {
-                    autocompleteSuggestions.classList.remove('hidden');
-                    matches.forEach(name => {
-                        const div = document.createElement('div');
-                        div.textContent = name;
-                        div.onclick = () => {
-                            productNameInput.value = name;
-                            productPriceInput.value = productMemory[name].lastPrice;
-                            categoryDisplay.textContent = productMemory[name].lastCategory;
-                            autocompleteSuggestions.classList.add('hidden');
-                            productPriceInput.focus();
-                        };
-                        autocompleteSuggestions.appendChild(div);
-                    });
-                } else {
-                    autocompleteSuggestions.classList.add('hidden');
-                }
-            } else {
-                autocompleteSuggestions.classList.add('hidden');
-            }
-
-            // Update suggested category dynamically
-            const suggestedCat = suggestCategory(inputVal);
-            categoryDisplay.textContent = suggestedCat === 'أخرى' ? '(تلقائي)' : suggestedCat;
-        }
-
-        // --- Event Listeners ---
-
-        // Tab switching
-        dailyTabBtn.addEventListener('click', () => {
-            dailyTabBtn.classList.add('active');
-            monthlyTabBtn.classList.remove('active');
-            dailyPage.classList.add('active');
-            monthlyPage.classList.remove('active');
-            // Re-render functions are called by onSnapshot listener automatically
-            // renderDailySummaries(); 
-            // renderCurrentDateExpenses(); 
-            cancelEdit(); // Reset edit mode when switching tabs
-        });
-
-        monthlyTabBtn.addEventListener('click', () => {
-            monthlyTabBtn.classList.add('active');
-            dailyTabBtn.classList.remove('active');
-            monthlyPage.classList.add('active');
-            dailyPage.classList.remove('active');
-            updateMonthlySummary(); // Explicitly update when switching to ensure it's fresh
-            cancelEdit(); // Reset edit mode when switching tabs
-        });
-
-        // Add/Update expense button click
-        addExpenseBtn.addEventListener('click', addOrUpdateExpense);
-
-        // Cancel Edit button click
-        cancelEditBtn.addEventListener('click', cancelEdit);
-
-        // Keyboard support (Enter key)
-        productNameInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                if (!autocompleteSuggestions.classList.contains('hidden') && autocompleteSuggestions.children.length > 0) {
-                    autocompleteSuggestions.children[0].click(); // Select first autocomplete suggestion
-                } else {
-                    productPriceInput.focus();
-                }
-            }
-        });
-
-        productPriceInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                addOrUpdateExpense();
-            }
-        });
-
-        // Product name input for suggestions and category auto-detection
-        productNameInput.addEventListener('input', handleProductNameInput);
-
-        // Hide autocomplete suggestions when clicking outside
-        document.addEventListener('click', (event) => {
-            if (!productNameInput.contains(event.target) && !autocompleteSuggestions.contains(event.target)) {
-                autocompleteSuggestions.classList.add('hidden');
-            }
-        });
-
-        // Date input change event
-        expenseDateInput.addEventListener('change', () => {
-            renderCurrentDateExpenses(); // Re-render expenses for the newly selected date
-        });
-
-        // Today/Yesterday buttons for date input
-        todayDateBtn.addEventListener('click', () => {
-            expenseDateInput.value = getDateString('today');
-            renderCurrentDateExpenses();
-        });
-
-        yesterdayDateBtn.addEventListener('click', () => {
-            expenseDateInput.value = getDateString('yesterday');
-            renderCurrentDateExpenses();
-        });
-
-
-        // Export/Import/Clear All Data Listeners
-        exportDataBtn.addEventListener('click', exportData);
-        importDataBtn.addEventListener('click', importData);
-        importFileInput.addEventListener('change', handleImportFile);
-        clearAllDataBtn.addEventListener('click', clearAllData);
-
-
-        // --- Firebase & Initial Setup ---
-
-        // Main initialization function for Firebase and data loading
-        async function initializeAppAndFirebase() {
-            showLoading('جاري تهيئة التطبيق...');
-            try {
-                if (!firebaseConfig) {
-                    console.error("Firebase config is not provided. Please ensure __firebase_config is set.");
-                    showToast("خطأ: إعدادات Firebase غير متوفرة.", 5000);
-                    return;
-                }
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                // Authenticate anonymously or with custom token
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                // Listen for auth state changes and set up Firestore listener
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        currentUserIdDisplay.textContent = userId; // Display user ID (though hidden by CSS)
-                        expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
-                        authReady = true;
-                        // Set up real-time listener for expenses
-                        onSnapshot(expensesCollectionRef, (snapshot) => {
-                            expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            // Sort locally by timestamp as orderBy might require indexes
-                            expenses.sort((a, b) => new Date(a.timestamp || a.date) - new Date(b.timestamp || b.date));
-                            rebuildProductMemoryFromExpenses();
-                            renderCurrentDateExpenses();
-                            renderDailySummaries();
-                            updateQuickSuggestions();
-                            updateMonthlySummary();
-                        }, (error) => {
-                            console.error("Error listening to expenses:", error);
-                            showToast("خطأ في تحديث البيانات. الرجاء التحقق من اتصالك.", 4000);
-                        });
-                        console.log("Firebase authenticated and listening for data.");
-                    } else {
-                        console.log("No user signed in.");
-                        userId = null;
-                        currentUserIdDisplay.textContent = 'غير معروف';
-                        expenses = []; // Clear expenses if no user
-                        authReady = false;
-                        // Clear UI if no user
-                        rebuildProductMemoryFromExpenses();
-                        renderCurrentDateExpenses();
-                        renderDailySummaries();
-                        updateQuickSuggestions();
-                        updateMonthlySummary();
-                    }
-                    hideLoading(); // Hide loading after initial auth state check
-                });
-
-            } catch (error) {
-                console.error("Failed to initialize Firebase or authenticate:", error);
-                showToast("خطأ فادح: فشل في تهيئة التطبيق. الرجاء تحديث الصفحة.", 5000);
-                hideLoading();
-            }
-        }
-
-        // --- PWA Service Worker Registration ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => {
-                        console.log('Service Worker registered with scope:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('Service Worker registration failed:', error);
-                    });
-            });
-        }
-
-        // --- Initialization ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // Set default date to today and display it
-            const todayString = getDateString('today');
-            expenseDateInput.value = todayString;
-            selectedDateDisplay.textContent = todayString; // Initialize selected date display
-            
-            // Initialize Lucide icons on load
-            lucide.createIcons();
-
-            // Start Firebase initialization and data loading
-            initializeAppAndFirebase(); 
-        });
+</head>  
+<body>  
+    <div id="loadingOverlay" class="loading-overlay">  
+        <div class="spinner"></div>  
+        <div class="loading-text" id="loadingText">جاري تهيئة التطبيق...</div>  
+    </div>  
+      
+    <div id="authScreen" class="main-container justify-center items-center hidden">  
+        <h1 class="text-4xl font-bold text-center mb-4 text-blue-700">أهلاً بك في مصاريفي</h1>  
+        <p class="text-gray-600 text-center mb-12">سجل الدخول باستخدام حساب جوجل للبدء في تتبع نفقاتك.</p>  
+        <button id="googleSignInBtn" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center justify-center gap-3 w-full max-w-sm py-3 text-lg">  
+            <svg class="w-6 h-6" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.42-4.55H24v8.51h12.8c-.57 2.76-2.26 5.15-4.8 6.79l7.98 6.19C45.27 36.64 48 31.1 48 24c0-.73-.08-1.45-.22-2.15l-1.4-.3z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.98-6.19c-2.17 1.45-4.94 2.32-8.02 2.32-6.27 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>  
+            تسجيل الدخول باستخدام جوجل  
+        </button>  
+    </div>  
+
+    <div id="appScreen" class="main-container hidden">  
+        <header class="flex justify-between items-center mb-6">  
+            <div class="flex items-center gap-3">  
+                <img id="userAvatar" class="w-10 h-10 rounded-full" src="" alt="User Avatar">  
+                <span id="userName" class="font-semibold text-gray-700"></span>  
+            </div>  
+            <button id="signOutBtn" class="text-sm text-red-500 hover:text-red-700 font-semibold flex items-center gap-1">  
+                <i data-lucide="log-out" class="w-4 h-4"></i>  
+                خروج  
+            </button>  
+        </header>  
+          
+        <div class="flex justify-around bg-blue-100 p-2 rounded-2xl mb-8 shadow-inner">  
+            <button id="dailyTabBtn" class="tab-button active flex-1 mx-1">  
+                <i data-lucide="calendar-days" class="inline-block align-middle ml-2"></i> اليوم  
+            </button>  
+            <button id="monthlyTabBtn" class="tab-button flex-1 mx-1">  
+                <i data-lucide="bar-chart-2" class="inline-block align-middle ml-2"></i> الملخص الشهري  
+            </button>  
+        </div>  
+
+        <div id="dailyPage" class="tab-content active flex-grow">  
+            <div class="p-5 bg-blue-50 rounded-2xl shadow-md mb-6">  
+                <div class="mb-5">  
+                    <label for="expenseDate" class="block text-sm font-medium text-gray-700 mb-2 text-right">التاريخ:</label>  
+                    <input type="date" id="expenseDate" class="focus:border-blue-500">  
+                </div>  
+                <div class="mb-5 relative">  
+                    <label for="productName" class="block text-sm font-medium text-gray-700 mb-2 text-right">اسم المنتج:</label>  
+                    <input type="text" id="productName" placeholder="مثال: قهوة، فاتورة كهرباء" class="focus:border-blue-500">  
+                </div>  
+                <div class="mb-5">  
+                    <label for="productPrice" class="block text-sm font-medium text-gray-700 mb-2 text-right">السعر:</label>  
+                    <input type="number" id="productPrice" placeholder="مثال: 15.50" step="0.01" class="focus:border-blue-500">  
+                </div>  
+                <div class="mb-6 flex justify-center flex-wrap gap-3">  
+                    <button id="addExpenseBtn" class="flex-1 py-3 text-lg min-w-[150px]">  
+                        <i data-lucide="plus" class="inline-block align-middle ml-2"></i> إضافة مصروف  
+                    </button>  
+                    <button id="cancelEditBtn" class="secondary-button flex-1 py-3 text-lg hidden min-w-[150px]">  
+                        <i data-lucide="x" class="inline-block align-middle ml-2"></i> إلغاء  
+                    </button>  
+                </div>  
+            </div>  
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 text-right">مصاريف <span id="selectedDateDisplay"></span></h3>  
+            <div id="currentDateExpenseList" class="mb-4"></div>  
+            <div class="mt-4 p-4 bg-blue-100 text-blue-900 font-bold text-xl rounded-xl text-center shadow-sm">  
+                إجمالي اليوم: <span id="currentDateTotal">0.00</span>  
+            </div>  
+        </div>  
+
+        <div id="monthlyPage" class="tab-content flex-grow">  
+            <div class="summary-card">  
+                <h3><i data-lucide="pie-chart" class="inline-block align-middle ml-2"></i> ملخص الإحصائيات الشهرية</h3>  
+                <p>إجمالي الشهر: <span id="monthlyTotal">0.00</span></p>  
+                <p>المتوسط اليومي: <span id="dailyAverage">0.00</span></p>  
+                <p>الأيام المسجلة: <span id="daysRecorded">0</span></p>  
+            </div>  
+            <div class="summary-card">  
+                <h3><i data-lucide="list-ordered" class="inline-block align-middle ml-2"></i> أعلى فئات الإنفاق</h3>  
+                <ul id="topCategoriesList" class="category-list"></ul>  
+            </div>  
+            <div class="summary-card">  
+                <h3><i data-lucide="database" class="inline-block align-middle ml-2"></i> إدارة البيانات</h3>  
+                <div class="flex flex-col gap-3">  
+                    <button id="exportDataBtn" class="py-3 secondary-button w-full flex items-center justify-center gap-2"><i data-lucide="download"></i> تصدير البيانات</button>  
+                    <input type="file" id="importFileInput" accept=".json" class="hidden" />  
+                    <button id="importDataBtn" class="py-3 secondary-button w-full flex items-center justify-center gap-2"><i data-lucide="upload"></i> استيراد البيانات</button>  
+                    <button id="clearAllDataBtn" class="py-3 delete-button w-full flex items-center justify-center gap-2"><i data-lucide="trash-2"></i> مسح جميع البيانات</button>  
+                </div>  
+            </div>  
+        </div>  
+    </div>  
+    <div id="toastMessage" class="toast-message"></div>  
+
+    <script type="module">  
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";  
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";  
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";  
+
+        const firebaseConfig = {  
+            apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ",  
+            authDomain: "my-expenses-81714.firebaseapp.com",  
+            projectId: "my-expenses-81714",  
+            storageBucket: "my-expenses-81714.firebasestorage.app",  
+            messagingSenderId: "672207051964",  
+            appId: "1:672207051964:web:b6e0cedc143bd06fd584b9",  
+            measurementId: "G-YBTY3QD4YQ"  
+        };  
+          
+        let app, auth, db;  
+        let expensesCollectionRef;  
+        let unsubscribeFromExpenses = () => {};  
+        let expenses = [];  
+        let isEditing = false;  
+        let editingExpenseId = null;  
+
+        const DEFAULT_CATEGORIES = {  
+            'طعام': ['طعام', 'مطعم', 'وجبة', 'خضار', 'فاكهة', 'لحم', 'دجاج', 'سمك', 'خبز', 'حليب', 'بيض'],  
+            'مواصلات': ['بنزين', 'تاكسي', 'باص', 'مترو', 'مواصلات', 'سيارة'],  
+            'فواتير': ['كهرباء', 'ماء', 'انترنت', 'هاتف', 'فاتورة', 'إيجار'],  
+            'تسوق': ['ملابس', 'تسوق', 'أحذية', 'إلكترونيات', 'هدية', 'هدايا'],  
+            'صحة': ['صيدلية', 'دواء', 'طبيب', 'مستشفى', 'فيتامين'],  
+            'ترفيه': ['سينما', 'قهوة', 'مقهى', 'رحلة', 'كتاب', 'لعبة'],  
+            'شخصي': ['حلاق', 'شخصي', 'تدخين', 'سجاير']  
+        };  
+
+        const loadingOverlay = document.getElementById('loadingOverlay');  
+        const authScreen = document.getElementById('authScreen');  
+        const appScreen = document.getElementById('appScreen');  
+        const googleSignInBtn = document.getElementById('googleSignInBtn');  
+        const signOutBtn = document.getElementById('signOutBtn');  
+        const userAvatar = document.getElementById('userAvatar');  
+        const userName = document.getElementById('userName');  
+
+        const dailyTabBtn = document.getElementById('dailyTabBtn');  
+        const monthlyTabBtn = document.getElementById('monthlyTabBtn');  
+        const dailyPage = document.getElementById('dailyPage');  
+        const monthlyPage = document.getElementById('monthlyPage');  
+
+        const expenseDateInput = document.getElementById('expenseDate');  
+        const productNameInput = document.getElementById('productName');  
+        const productPriceInput = document.getElementById('productPrice');  
+        const addExpenseBtn = document.getElementById('addExpenseBtn');  
+        const cancelEditBtn = document.getElementById('cancelEditBtn');  
+        const currentDateExpenseList = document.getElementById('currentDateExpenseList');  
+        const selectedDateDisplay = document.getElementById('selectedDateDisplay');  
+        const currentDateTotalDisplay = document.getElementById('currentDateTotal');  
+
+        const monthlyTotalDisplay = document.getElementById('monthlyTotal');  
+        const dailyAverageDisplay = document.getElementById('dailyAverage');  
+        const daysRecordedDisplay = document.getElementById('daysRecorded');  
+        const topCategoriesList = document.getElementById('topCategoriesList');  
+          
+        const exportDataBtn = document.getElementById('exportDataBtn');  
+        const importDataBtn = document.getElementById('importDataBtn');  
+        const importFileInput = document.getElementById('importFileInput');  
+        const clearAllDataBtn = document.getElementById('clearAllDataBtn');  
+        const toastMessageElement = document.getElementById('toastMessage');  
+
+        function showToast(message, duration = 3000) {  
+            toastMessageElement.textContent = message;  
+            toastMessageElement.classList.add('show');  
+            setTimeout(() => {  
+                toastMessageElement.classList.remove('show');  
+            }, duration);  
+        }  
+
+        function getDateString(date) {  
+            const d = new Date(date);  
+            const year = d.getFullYear();  
+            const month = String(d.getMonth() + 1).padStart(2, '0');  
+            const day = String(d.getDate()).padStart(2, '0');  
+            return `${year}-${month}-${day}`;  
+        }  
+          
+        function formatCurrency(amount) {  
+            return new Intl.NumberFormat('ar-AE', { style: 'currency', currency: 'AED' }).format(amount || 0);  
+        }  
+
+        function suggestCategory(productName) {  
+            const lowerProductName = productName.toLowerCase();  
+            for (const category in DEFAULT_CATEGORIES) {  
+                if (DEFAULT_CATEGORIES[category].some(keyword => lowerProductName.includes(keyword))) {  
+                    return category;  
+                }  
+            }  
+            return 'أخرى';  
+        }  
+
+        function renderCurrentDateExpenses() {  
+            const selectedDate = expenseDateInput.value;  
+            selectedDateDisplay.textContent = new Date(selectedDate).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });  
+
+            const expensesForDate = expenses.filter(e => e.date === selectedDate).sort((a,b) => b.timestamp - a.timestamp);  
+            currentDateExpenseList.innerHTML = '';  
+            let total = 0;  
+
+            if (expensesForDate.length === 0) {  
+                 currentDateExpenseList.innerHTML = `<p class="text-center text-gray-500 py-4">لا توجد مصاريف لهذا اليوم.</p>`;  
+            } else {  
+                expensesForDate.forEach(exp => {  
+                    total += exp.price;  
+                    const item = document.createElement('div');  
+                    item.className = 'expense-item';  
+                    item.dataset.id = exp.id;  
+                    item.innerHTML = `  
+                        <div class="name">${exp.name}</div>  
+                        <div class="details flex items-center">\n                            <span class="category">${exp.category}</span>  
+                            <span class="price">${formatCurrency(exp.price)}</span>  
+                            <button class="delete-btn text-red-500 hover:text-red-700 ml-2 p-1 rounded-full"><i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i></button>  
+                        </div>  
+                    `;  
+                    item.addEventListener('click', () => editExpense(exp.id));  
+                    item.querySelector('.delete-btn').addEventListener('click', (e) => {  
+                        e.stopPropagation();  
+                        deleteExpense(exp.id, item);  
+                    });  
+                    currentDateExpenseList.appendChild(item);  
+                });  
+            }  
+            currentDateTotalDisplay.textContent = formatCurrency(total);  
+            lucide.createIcons();  
+        }  
+
+        function updateMonthlySummary() {  
+            const now = new Date();  
+            const currentMonth = now.getMonth();  
+            const currentYear = now.getFullYear();  
+
+            const monthlyExpenses = expenses.filter(exp => {  
+                const expDate = new Date(exp.date);  
+                return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;  
+            });  
+
+            const monthlyTotal = monthlyExpenses.reduce((sum, exp) => sum + exp.price, 0);  
+            const uniqueDays = [...new Set(monthlyExpenses.map(exp => exp.date))];  
+            const daysRecorded = uniqueDays.length;  
+            const dailyAverage = daysRecorded > 0 ? monthlyTotal / daysRecorded : 0;  
+              
+            monthlyTotalDisplay.textContent = formatCurrency(monthlyTotal);  
+            dailyAverageDisplay.textContent = formatCurrency(dailyAverage);  
+            daysRecordedDisplay.textContent = daysRecorded;  
+
+            const categoryTotals = monthlyExpenses.reduce((acc, exp) => {  
+                acc[exp.category] = (acc[exp.category] || 0) + exp.price;  
+                return acc;  
+            }, {});  
+
+            topCategoriesList.innerHTML = '';  
+            Object.entries(categoryTotals)  
+                .sort(([, a], [, b]) => b - a)  
+                .forEach(([category, total]) => {  
+                    const li = document.createElement('li');  
+                    li.className = "flex justify-between py-2 border-b";  
+                    li.innerHTML = `<span>${category}</span> <span>${formatCurrency(total)}</span>`;  
+                    topCategoriesList.appendChild(li);  
+                });  
+        }  
+          
+        async function addOrUpdateExpense() {  
+            const name = productNameInput.value.trim();  
+            const price = parseFloat(productPriceInput.value);  
+            const date = expenseDateInput.value;  
+            if (!name || isNaN(price) || price <= 0 || !date) {  
+                showToast("الرجاء إدخال بيانات صحيحة.");  
+                return;  
+            }  
+            const category = suggestCategory(name);  
+
+            const expenseData = { name, price, date, category, timestamp: new Date().getTime() };  
+            loadingOverlay.classList.remove('hidden');  
+
+            try {  
+                if (isEditing) {  
+                    await updateDoc(doc(expensesCollectionRef, editingExpenseId), expenseData);  
+                    showToast("تم تحديث المصروف بنجاح.");  
+                } else {  
+                    await addDoc(expensesCollectionRef, expenseData);  
+                    showToast("تمت إضافة المصروف بنجاح.");  
+                }  
+                cancelEdit();  
+            } catch (error) {  
+                console.error("Error saving expense: ", error);  
+                showToast("حدث خطأ أثناء الحفظ.");  
+            } finally {  
+                loadingOverlay.classList.add('hidden');  
+            }  
+        }  
+
+        function editExpense(id) {  
+            const expense = expenses.find(e => e.id === id);  
+            if (expense) {  
+                isEditing = true;  
+                editingExpenseId = id;  
+                productNameInput.value = expense.name;  
+                productPriceInput.value = expense.price;  
+                expenseDateInput.value = expense.date;  
+                addExpenseBtn.innerHTML = `<i data-lucide="edit" class="inline-block align-middle ml-2"></i> تحديث`;  
+                cancelEditBtn.classList.remove('hidden');  
+                lucide.createIcons();  
+            }  
+        }  
+
+        function cancelEdit() {  
+            isEditing = false;  
+            editingExpenseId = null;  
+            productNameInput.value = '';  
+            productPriceInput.value = '';  
+            addExpenseBtn.innerHTML = `<i data-lucide="plus" class="inline-block align-middle ml-2"></i> إضافة مصروف`;  
+            cancelEditBtn.classList.add('hidden');  
+            lucide.createIcons();  
+        }  
+          
+        async function deleteExpense(id, element) {  
+            if (confirm("هل أنت متأكد من حذف هذا المصروف؟")) {  
+                 element.classList.add('fade-out');  
+                 setTimeout(async () => {  
+                    try {  
+                        await deleteDoc(doc(expensesCollectionRef, id));  
+                        showToast("تم حذف المصروف.");  
+                    } catch (error) {  
+                        console.error("Error deleting expense: ", error);  
+                        showToast("حدث خطأ أثناء الحذف.");  
+                        element.classList.remove('fade-out');  
+                    }  
+                 }, 500);  
+            }  
+        }  
+
+        function exportData() {  
+            if (expenses.length === 0) {  
+                showToast("لا توجد بيانات لتصديرها.");  
+                return;  
+            }  
+            const dataStr = JSON.stringify(expenses.map(({id, ...rest}) => rest), null, 2);  
+            const blob = new Blob([dataStr], {type: 'application/json'});  
+            const url = URL.createObjectURL(blob);  
+            const a = document.createElement('a');  
+            a.href = url;  
+            a.download = `expenses_backup_${new Date().toISOString().split('T')[0]}.json`;  
+            a.click();  
+            URL.revokeObjectURL(url);  
+            showToast("تم بدء تصدير البيانات.");  
+        }  
+
+        function importData() {  
+            if (!confirm("سيتم إضافة المصاريف من الملف. هل تريد المتابعة؟")) return;  
+            importFileInput.click();  
+        }  
+
+        async function handleImportFile(event) {  
+            const file = event.target.files[0];  
+            if (!file) return;  
+            const text = await file.text();  
+            try {  
+                const importedExpenses = JSON.parse(text);  
+                if (!Array.isArray(importedExpenses)) throw new Error("File is not an array");  
+
+                loadingOverlay.classList.remove('hidden');  
+                const batch = writeBatch(db);  
+                importedExpenses.forEach(exp => {  
+                    const newDocRef = doc(expensesCollectionRef); // Create a new doc with a random ID  
+                    batch.set(newDocRef, {  
+                        ...exp,  
+                        timestamp: exp.timestamp || new Date(exp.date).getTime()  
+                    });  
+                });  
+                await batch.commit();  
+                showToast(`تم استيراد ${importedExpenses.length} عنصر بنجاح.`);  
+            } catch (error) {  
+                console.error("Import failed: ", error);  
+                showToast("فشل استيراد الملف. تأكد من أن صيغته صحيحة.");  
+            } finally {  
+                importFileInput.value = '';  
+                loadingOverlay.classList.add('hidden');  
+            }  
+        }  
+
+        async function clearAllData() {  
+            if (confirm("تحذير! سيتم حذف جميع بياناتك بشكل نهائي. هل أنت متأكد؟")) {  
+                loadingOverlay.classList.remove('hidden');  
+                try {  
+                    const querySnapshot = await getDocs(expensesCollectionRef);  
+                    const batch = writeBatch(db);  
+                    querySnapshot.docs.forEach(d => batch.delete(d.ref));  
+                    await batch.commit();  
+                    showToast("تم مسح جميع البيانات.");  
+                } catch (error) {  
+                    console.error("Error clearing data:", error);  
+                    showToast("حدث خطأ أثناء مسح البيانات.");  
+                } finally {  
+                    loadingOverlay.classList.add('hidden');  
+                }  
+            }  
+        }  
+
+        function setupFirestoreListener(uid) {  
+            expensesCollectionRef = collection(db, 'users', uid, 'expenses');  
+            unsubscribeFromExpenses = onSnapshot(expensesCollectionRef, (snapshot) => {  
+                expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));  
+                renderCurrentDateExpenses();  
+                if(monthlyPage.classList.contains('active')) {  
+                    updateMonthlySummary();  
+                }  
+            }, (error) => {  
+                console.error("Error listening to expenses:", error);  
+                showToast("خطأ في الاتصال بقاعدة البيانات.");  
+            });  
+        }  
+
+        function initializeAppUi(user) {  
+            userAvatar.src = user.photoURL || 'https://i.pravatar.cc/40';  
+            userName.textContent = user.displayName || 'مستخدم';  
+              
+            appScreen.classList.remove('hidden');  
+            authScreen.classList.add('hidden');  
+            loadingOverlay.classList.add('hidden');  
+
+            setupFirestoreListener(user.uid);  
+        }  
+
+        function resetAppUi() {  
+            if(unsubscribeFromExpenses) unsubscribeFromExpenses();  
+            expenses = [];  
+            appScreen.classList.add('hidden');  
+            authScreen.classList.remove('hidden');  
+            loadingOverlay.classList.add('hidden');  
+            renderCurrentDateExpenses();  
+            updateMonthlySummary();  
+        }  
+
+        document.addEventListener('DOMContentLoaded', () => {  
+            try {  
+                app = initializeApp(firebaseConfig);  
+                auth = getAuth(app);  
+                db = getFirestore(app);  
+
+                if(!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {  
+                    loadingOverlay.classList.add('hidden');  
+                    document.body.innerHTML = `<div class="h-screen w-screen flex flex-col justify-center items-center bg-red-100 text-red-800 p-8">\n                        <h1 class="text-2xl font-bold mb-4">خطأ في الإعدادات</h1>\n                        <p class="text-center">الرجاء استبدال بيانات تهيئة Firebase المؤقتة في ملف index.html بالبيانات الحقيقية لمشروعك.</p>\n                    </div>`;  
+                    return;  
+                }  
+
+                onAuthStateChanged(auth, user => {  
+                    if (user) {  
+                        initializeAppUi(user);  
+                    } else {  
+                        resetAppUi();  
+                    }  
+                });  
+
+            } catch (error) {  
+                console.error("Firebase Init Error:", error);  
+                loadingOverlay.classList.add('hidden');  
+                showToast("فشل تهيئة التطبيق. تأكد من صحة إعدادات Firebase.");  
+            }  
+
+            lucide.createIcons();  
+            expenseDateInput.value = getDateString(new Date());  
+
+            googleSignInBtn.addEventListener('click', async () => {  
+                loadingOverlay.classList.remove('hidden');  
+                try {  
+                    const provider = new GoogleAuthProvider();  
+                    await signInWithPopup(auth, provider);  
+                } catch (error) {  
+                    console.error("Google Sign-In Error: ", error);  
+                    showToast("فشل تسجيل الدخول. الرجاء المحاولة مرة أخرى.");  
+                } finally {  
+                    loadingOverlay.classList.add('hidden');  
+                }  
+            });  
+
+            signOutBtn.addEventListener('click', async () => {  
+                await signOut(auth);  
+                showToast("تم تسجيل الخروج بنجاح.");  
+            });  
+              
+            dailyTabBtn.addEventListener('click', () => {  
+                dailyTabBtn.classList.add('active');  
+                monthlyTabBtn.classList.remove('active');  
+                dailyPage.classList.add('active');  
+                monthlyPage.classList.remove('active');  
+            });  
+            monthlyTabBtn.addEventListener('click', () => {  
+                monthlyTabBtn.classList.add('active');  
+                dailyTabBtn.classList.remove('active');  
+                monthlyPage.classList.add('active');  
+                dailyPage.classList.remove('active');  
+                updateMonthlySummary();  
+            });  
+
+            expenseDateInput.addEventListener('change', renderCurrentDateExpenses);  
+            addExpenseBtn.addEventListener('click', addOrUpdateExpense);  
+            cancelEditBtn.addEventListener('click', cancelEdit);  
+            exportDataBtn.addEventListener('click', exportData);  
+            importDataBtn.addEventListener('click', importData);  
+            importFileInput.addEventListener('change', handleImportFile);  
+            clearAllDataBtn.addEventListener('click', clearAllData);  
+              
+            if ('serviceWorker' in navigator) {  
+                window.addEventListener('load', () => {  
+                    navigator.serviceWorker.register('sw.js')  
+                        .then(reg => console.log('Service Worker: Registered'))  
+                        .catch(err => console.log(`Service Worker: Error: ${err}`));  
+                });  
+            }  
+        });  
     </script>
-</body>
+</body>  
 </html>
