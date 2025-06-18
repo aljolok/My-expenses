@@ -46,12 +46,16 @@
             color: #fff;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+        /* Tab Content Transition */
         .tab-content {
             display: none;
             padding-top: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
         }
         .tab-content.active {
             display: block;
+            opacity: 1;
         }
         /* Input field styling */
         input[type="text"], input[type="number"], input[type="date"] {
@@ -88,6 +92,18 @@
         button:active {
             transform: translateY(0);
         }
+        .secondary-button {
+            background-color: #6b7280; /* Gray */
+        }
+        .secondary-button:hover {
+            background-color: #4b5563; /* Darker gray */
+        }
+        .delete-button {
+            background-color: #ef4444; /* Red */
+        }
+        .delete-button:hover {
+            background-color: #dc2626; /* Darker red */
+        }
         /* Suggestion buttons */
         .suggestion-button {
             padding: 0.5rem 1rem;
@@ -116,6 +132,11 @@
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            cursor: pointer; /* Indicate clickable for editing */
+            transition: background-color 0.2s;
+        }
+        .expense-item:hover {
+            background-color: #eef2f6; /* Slight hover effect */
         }
         .expense-item .name {
             font-weight: 500;
@@ -235,6 +256,12 @@
             margin-bottom: 0.75rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
             text-align: right;
+            cursor: pointer; /* Make it clickable */
+            transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+        }
+        .daily-summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
         }
         .daily-summary-card h4 {
             font-size: 1rem;
@@ -250,6 +277,82 @@
             font-weight: 700;
             color: #1e3a8a;
             margin-right: 0.5rem;
+        }
+
+        /* Confirmation Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-around;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .modal-buttons button {
+            flex: 1;
+            padding: 0.75rem;
+            font-weight: 700;
+        }
+
+        /* Toast Message */
+        .toast-message {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            z-index: 1001;
+            white-space: nowrap;
+        }
+        .toast-message.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Fade-out animation for deleted items */
+        .fade-out {
+            opacity: 0;
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            transform: translateX(-100%);
         }
     </style>
 </head>
@@ -297,9 +400,12 @@
                     </div>
                 </div>
 
-                <div class="mb-4 flex justify-center">
-                    <button id="addExpense" class="w-full py-3 text-lg">
+                <div class="mb-4 flex justify-center flex-wrap gap-2">
+                    <button id="addExpense" class="flex-1 py-3 text-lg min-w-[150px]">
                         <i class="fas fa-plus ml-2"></i> إضافة مصروف
+                    </button>
+                    <button id="cancelEditBtn" class="secondary-button flex-1 py-3 text-lg hidden min-w-[150px]">
+                        <i class="fas fa-times ml-2"></i> إلغاء التعديل
                     </button>
                 </div>
                 
@@ -350,8 +456,40 @@
                     <!-- Expense history will be displayed here -->
                 </div>
             </div>
+
+            <!-- Export/Import Data Buttons -->
+            <div class="summary-card">
+                <h3><i class="fas fa-database ml-2"></i> إدارة البيانات</h3>
+                <div class="flex flex-col gap-3">
+                    <button id="exportDataBtn" class="py-2 secondary-button w-full">
+                        <i class="fas fa-download ml-2"></i> تصدير البيانات
+                    </button>
+                    <input type="file" id="importFileInput" accept=".json" class="hidden" />
+                    <button id="importDataBtn" class="py-2 secondary-button w-full">
+                        <i class="fas fa-upload ml-2"></i> استيراد البيانات
+                    </button>
+                    <button id="clearAllDataBtn" class="py-2 delete-button w-full">
+                        <i class="fas fa-trash-alt ml-2"></i> مسح جميع البيانات
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModalOverlay" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold mb-4">تأكيد الحذف</h3>
+            <p id="confirmModalText" class="mb-6">هل أنت متأكد أنك تريد حذف هذا المصروف؟</p>
+            <div class="modal-buttons">
+                <button id="confirmDeleteBtn" class="delete-button">نعم، احذف</button>
+                <button id="cancelDeleteBtn" class="secondary-button">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Message -->
+    <div id="toastMessage" class="toast-message"></div>
 
     <script>
         // --- Global Variables and Constants ---
@@ -372,6 +510,8 @@
 
         let expenses = []; // Array to store all expense objects
         let productMemory = {}; // Local cache for autocomplete and quick suggestions
+        let isEditing = false; // Flag to indicate if an item is being edited
+        let editingExpenseId = null; // Stores the ID of the expense being edited
 
         // --- DOM Elements ---
         const dailyTabBtn = document.getElementById('dailyTabBtn');
@@ -385,6 +525,7 @@
         const selectedDateDisplay = document.getElementById('selectedDateDisplay'); // To show selected date in input card
         const categoryDisplay = document.getElementById('categoryDisplay');
         const addExpenseBtn = document.getElementById('addExpense');
+        const cancelEditBtn = document.getElementById('cancelEditBtn'); // New Cancel Edit button
         const currentDateExpenseList = document.getElementById('currentDateExpenseList'); // Specific items for selected date
         const currentDateTotalDisplay = document.getElementById('currentDateTotal'); // Total for selected date
         const dailySummaryCardsContainer = document.getElementById('dailySummaryCards'); // All daily summaries
@@ -397,7 +538,68 @@
         const topCategoriesList = document.getElementById('topCategoriesList');
         const expenseHistoryList = document.getElementById('expenseHistoryList');
 
+        // Modal Elements
+        const confirmModalOverlay = document.getElementById('confirmModalOverlay');
+        const confirmModalText = document.getElementById('confirmModalText');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        let expenseToDeleteId = null; // Store ID of item to be deleted
+
+        // Toast Message Element
+        const toastMessageElement = document.getElementById('toastMessage');
+
+        // Export/Import/Clear All Buttons
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        const importDataBtn = document.getElementById('importDataBtn');
+        const importFileInput = document.getElementById('importFileInput');
+        const clearAllDataBtn = document.getElementById('clearAllDataBtn');
+
+
         // --- Helper Functions ---
+
+        /**
+         * Shows a toast message.
+         * @param {string} message - The message to display.
+         * @param {number} duration - Duration in milliseconds (default: 3000).
+         */
+        function showToast(message, duration = 3000) {
+            toastMessageElement.textContent = message;
+            toastMessageElement.classList.add('active');
+            setTimeout(() => {
+                toastMessageElement.classList.remove('active');
+            }, duration);
+        }
+
+        /**
+         * Shows the confirmation modal.
+         * @param {string} message - The message to display in the modal.
+         * @param {function} onConfirm - Callback function to execute on confirmation.
+         * @param {string} itemId - The ID of the item related to the action (e.g., for deletion).
+         */
+        function showConfirmModal(message, onConfirm, itemId) {
+            confirmModalText.textContent = message;
+            confirmModalOverlay.classList.add('active');
+            expenseToDeleteId = itemId; // Store the ID for the delete action
+
+            // Set up event listeners for modal buttons
+            confirmDeleteBtn.onclick = () => {
+                onConfirm(expenseToDeleteId); // Pass the item ID to the confirm function
+                hideConfirmModal();
+            };
+            cancelDeleteBtn.onclick = () => {
+                hideConfirmModal();
+            };
+        }
+
+        /**
+         * Hides the confirmation modal.
+         */
+        function hideConfirmModal() {
+            confirmModalOverlay.classList.remove('active');
+            confirmDeleteBtn.onclick = null; // Remove listeners to prevent memory leaks
+            cancelDeleteBtn.onclick = null;
+            expenseToDeleteId = null;
+        }
 
         /**
          * Generates a unique ID for an expense item.
@@ -502,6 +704,7 @@
                     totalForSelectedDate += exp.price;
                     const expenseItem = document.createElement('div');
                     expenseItem.className = 'expense-item';
+                    expenseItem.dataset.id = exp.id; // Store ID for editing
                     expenseItem.innerHTML = `
                         <div class="name text-right">${exp.name}</div>
                         <div class="details flex items-center justify-start">
@@ -520,8 +723,19 @@
             // Add event listeners for delete buttons
             document.querySelectorAll('#currentDateExpenseList .delete-btn').forEach(button => {
                 button.onclick = (event) => {
+                    event.stopPropagation(); // Prevent expense-item click when delete button is clicked
                     const idToDelete = event.currentTarget.dataset.id;
-                    deleteExpense(idToDelete); // Delete from local storage
+                    showConfirmModal(`هل أنت متأكد أنك تريد حذف "${expenses.find(e => e.id === idToDelete)?.name}"؟`, deleteExpense, idToDelete);
+                };
+            });
+
+            // Add event listeners for editing expense items
+            document.querySelectorAll('#currentDateExpenseList .expense-item').forEach(item => {
+                item.onclick = (event) => {
+                    // Only activate edit if not clicking the delete button itself
+                    if (!event.target.closest('.delete-btn')) {
+                        editExpense(item.dataset.id);
+                    }
                 };
             });
         }
@@ -561,6 +775,7 @@
                 sortedDailySummaries.forEach(summary => {
                     const card = document.createElement('div');
                     card.className = 'daily-summary-card';
+                    card.dataset.date = summary.date; // Store date for click event
                     card.innerHTML = `
                         <h4><i class="fas fa-calendar-alt ml-2"></i> ${summary.date}</h4>
                         <div class="details">
@@ -569,6 +784,16 @@
                         </div>
                     `;
                     dailySummaryCardsContainer.appendChild(card);
+                });
+
+                // Add event listeners for clickable daily summary cards
+                document.querySelectorAll('.daily-summary-card').forEach(card => {
+                    card.addEventListener('click', (event) => {
+                        const dateToLoad = event.currentTarget.dataset.date;
+                        expenseDateInput.value = dateToLoad; // Set the date input
+                        renderCurrentDateExpenses(); // Refresh the expenses for that date
+                        dailyTabBtn.click(); // Switch to daily tab if not already there
+                    });
                 });
             }
         }
@@ -623,36 +848,56 @@
         }
 
         /**
-         * Handles the addition of a new expense and saves it to local storage.
+         * Handles the addition or update of an expense and saves it to local storage.
          */
-        async function addExpense() {
+        async function addOrUpdateExpense() {
             const productName = productNameInput.value.trim();
             const productPrice = parseFloat(productPriceInput.value);
             const expenseDate = expenseDateInput.value; // Get selected date
             const suggestedCategory = categoryDisplay.textContent.replace('(تلقائي)', '').trim();
 
             if (!productName || isNaN(productPrice) || productPrice <= 0 || !expenseDate) {
-                const feedbackDiv = document.createElement('div');
-                feedbackDiv.textContent = 'الرجاء إدخال اسم المنتج والسعر والتاريخ بشكل صحيح.';
-                feedbackDiv.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-                document.body.appendChild(feedbackDiv);
-                setTimeout(() => feedbackDiv.remove(), 3000);
+                showToast('الرجاء إدخال اسم المنتج والسعر والتاريخ بشكل صحيح.', 3000);
                 return;
             }
 
-            const newExpense = {
-                id: generateUniqueId(),
-                date: expenseDate, // Use the selected date
-                name: productName,
-                price: productPrice,
-                category: suggestedCategory,
-                timestamp: new Date().toISOString() // Add a timestamp for consistent sorting
-            };
+            if (isEditing) {
+                // Update existing expense
+                const index = expenses.findIndex(exp => exp.id === editingExpenseId);
+                if (index !== -1) {
+                    expenses[index] = {
+                        ...expenses[index], // Keep existing properties
+                        date: expenseDate,
+                        name: productName,
+                        price: productPrice,
+                        category: suggestedCategory,
+                        timestamp: new Date().toISOString() // Update timestamp for re-sorting
+                    };
+                    showToast('تم تحديث المصروف بنجاح!', 2000);
+                }
+                isEditing = false;
+                editingExpenseId = null;
+                addExpenseBtn.innerHTML = '<i class="fas fa-plus ml-2"></i> إضافة مصروف';
+                cancelEditBtn.classList.add('hidden');
+            } else {
+                // Add new expense
+                const newExpense = {
+                    id: generateUniqueId(),
+                    date: expenseDate,
+                    name: productName,
+                    price: productPrice,
+                    category: suggestedCategory,
+                    timestamp: new Date().toISOString()
+                };
+                expenses.push(newExpense);
+                showToast('تم إضافة مصروف جديد!', 2000);
+            }
 
-            expenses.push(newExpense); // Add to local array
+            // Sort expenses by timestamp after add/update
+            expenses.sort((a, b) => new Date(a.timestamp || a.date) - new Date(b.timestamp || b.date));
             saveExpenses(); // Save to local storage
 
-            // Clear input fields after adding
+            // Clear input fields after adding/updating
             productNameInput.value = '';
             productPriceInput.value = '';
             // expenseDateInput.value = getTodayDateString(); // DO NOT reset date here, keep selected date
@@ -665,16 +910,155 @@
         }
 
         /**
+         * Populates the input fields for editing an expense.
+         * @param {string} id - The ID of the expense to edit.
+         */
+        function editExpense(id) {
+            const expenseToEdit = expenses.find(exp => exp.id === id);
+            if (expenseToEdit) {
+                productNameInput.value = expenseToEdit.name;
+                productPriceInput.value = expenseToEdit.price;
+                expenseDateInput.value = expenseToEdit.date;
+                categoryDisplay.textContent = expenseToEdit.category;
+                
+                isEditing = true;
+                editingExpenseId = id;
+                addExpenseBtn.innerHTML = '<i class="fas fa-edit ml-2"></i> تحديث مصروف';
+                cancelEditBtn.classList.remove('hidden');
+                productNameInput.focus();
+            }
+        }
+
+        /**
+         * Cancels the current edit operation and resets the form.
+         */
+        function cancelEdit() {
+            isEditing = false;
+            editingExpenseId = null;
+            productNameInput.value = '';
+            productPriceInput.value = '';
+            // expenseDateInput.value = getTodayDateString(); // Optionally reset date, or keep it
+            categoryDisplay.textContent = '(تلقائي)';
+            addExpenseBtn.innerHTML = '<i class="fas fa-plus ml-2"></i> إضافة مصروف';
+            cancelEditBtn.classList.add('hidden');
+            productNameInput.focus();
+        }
+
+        /**
          * Deletes an expense from local storage.
          * @param {string} id - The ID of the expense to delete.
          */
         function deleteExpense(id) {
-            expenses = expenses.filter(exp => exp.id !== id);
-            saveExpenses(); // Save updated expenses to local storage
-            renderCurrentDateExpenses(); // Re-render items for current date
-            renderDailySummaries(); // Re-render summaries
-            updateMonthlySummary(); // Update monthly summary
+            const itemElement = document.querySelector(`.expense-item[data-id="${id}"]`);
+            if (itemElement) {
+                // Add fade-out class before removing from DOM
+                itemElement.classList.add('fade-out');
+                // Remove from DOM after animation
+                itemElement.addEventListener('transitionend', () => {
+                    expenses = expenses.filter(exp => exp.id !== id);
+                    saveExpenses(); // Save updated expenses to local storage
+                    renderCurrentDateExpenses(); // Re-render items for current date
+                    renderDailySummaries(); // Re-render summaries
+                    updateMonthlySummary(); // Update monthly summary
+                    showToast('تم حذف المصروف بنجاح!', 2000);
+                    // If we were editing this item, cancel edit mode
+                    if (editingExpenseId === id) {
+                        cancelEdit();
+                    }
+                });
+            } else {
+                // Fallback if element not found (shouldn't happen often)
+                expenses = expenses.filter(exp => exp.id !== id);
+                saveExpenses();
+                renderCurrentDateExpenses();
+                renderDailySummaries();
+                updateMonthlySummary();
+                showToast('تم حذف المصروف بنجاح!', 2000);
+                if (editingExpenseId === id) {
+                    cancelEdit();
+                }
+            }
         }
+
+        /**
+         * Exports all expense data to a JSON file.
+         */
+        function exportData() {
+            const dataStr = JSON.stringify(expenses, null, 2); // Pretty print JSON
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `my_expenses_backup_${getTodayDateString()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('تم تصدير البيانات بنجاح!', 2000);
+        }
+
+        /**
+         * Imports expense data from a JSON file.
+         */
+        function importData() {
+            importFileInput.click(); // Trigger file input click
+        }
+
+        /**
+         * Handles the selected file for import.
+         * @param {Event} event - The change event from the file input.
+         */
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedExpenses = JSON.parse(e.target.result);
+                    // Basic validation for imported data structure
+                    if (Array.isArray(importedExpenses) && importedExpenses.every(item => item.id && item.date && item.name && typeof item.price === 'number')) {
+                        // Option: Overwrite existing data or merge? For simplicity, we'll overwrite.
+                        showConfirmModal('هل أنت متأكد من استيراد البيانات؟ سيؤدي هذا إلى استبدال بياناتك الحالية.', (confirmed) => {
+                            if (confirmed) {
+                                expenses = importedExpenses;
+                                saveExpenses();
+                                renderCurrentDateExpenses();
+                                renderDailySummaries();
+                                updateMonthlySummary();
+                                showToast('تم استيراد البيانات بنجاح!', 2000);
+                            }
+                        }, null); // No specific item ID for import confirmation
+                    } else {
+                        showToast('صيغة ملف الاستيراد غير صالحة.', 3000);
+                    }
+                } catch (error) {
+                    console.error("Error parsing imported JSON:", error);
+                    showToast('حدث خطأ أثناء قراءة ملف البيانات. تأكد أنه ملف JSON صحيح.', 3000);
+                }
+                importFileInput.value = ''; // Clear file input
+            };
+            reader.readAsText(file);
+        }
+
+        /**
+         * Clears all local expense data.
+         */
+        function clearAllData() {
+            showConfirmModal('هل أنت متأكد من مسح جميع بياناتك؟ لا يمكن التراجع عن هذا الإجراء.', (confirmed) => {
+                if (confirmed) {
+                    expenses = [];
+                    saveExpenses(); // Clear local storage
+                    renderCurrentDateExpenses();
+                    renderDailySummaries();
+                    updateMonthlySummary();
+                    showToast('تم مسح جميع البيانات بنجاح!', 2000);
+                }
+            }, null); // No specific item ID for clear all confirmation
+        }
+
 
         /**
          * Updates and renders the monthly summary page.
@@ -796,8 +1180,9 @@
             monthlyTabBtn.classList.remove('active');
             dailyPage.classList.add('active');
             monthlyPage.classList.remove('active');
-            renderDailySummaries(); // Re-render daily page with summaries
+            renderDailySummaries(); // Re-render all daily summary cards
             renderCurrentDateExpenses(); // Re-render expenses for the current selected date
+            cancelEdit(); // Reset edit mode when switching tabs
         });
 
         monthlyTabBtn.addEventListener('click', () => {
@@ -806,10 +1191,14 @@
             monthlyPage.classList.add('active');
             dailyPage.classList.remove('active');
             updateMonthlySummary(); // Explicitly update when switching to ensure it's fresh
+            cancelEdit(); // Reset edit mode when switching tabs
         });
 
-        // Add expense button click
-        addExpenseBtn.addEventListener('click', addExpense);
+        // Add/Update expense button click
+        addExpenseBtn.addEventListener('click', addOrUpdateExpense);
+
+        // Cancel Edit button click
+        cancelEditBtn.addEventListener('click', cancelEdit);
 
         // Keyboard support (Enter key)
         productNameInput.addEventListener('keydown', (event) => {
@@ -826,7 +1215,7 @@
         productPriceInput.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                addExpense();
+                addOrUpdateExpense();
             }
         });
 
@@ -844,6 +1233,27 @@
         expenseDateInput.addEventListener('change', () => {
             renderCurrentDateExpenses(); // Re-render expenses for the newly selected date
         });
+
+        // Export/Import/Clear All Data Listeners
+        exportDataBtn.addEventListener('click', exportData);
+        importDataBtn.addEventListener('click', importData);
+        importFileInput.addEventListener('change', handleImportFile);
+        clearAllDataBtn.addEventListener('click', () => {
+            showConfirmModal('هل أنت متأكد من مسح جميع بياناتك؟ لا يمكن التراجع عن هذا الإجراء.', (confirmed) => {
+                if (confirmed) {
+                    localStorage.removeItem(EXPENSES_STORAGE_KEY); // Directly clear from local storage
+                    expenses = []; // Reset array
+                    productMemory = {}; // Reset product memory
+                    renderCurrentDateExpenses(); // Re-render current date (empty)
+                    renderDailySummaries(); // Re-render all summaries (empty)
+                    updateQuickSuggestions(); // Clear quick suggestions
+                    updateMonthlySummary(); // Reset monthly summary
+                    showToast('تم مسح جميع البيانات بنجاح!', 2000);
+                    cancelEdit(); // Exit any edit mode
+                }
+            }, null);
+        });
+
 
         // --- PWA Service Worker Registration ---
         // This part registers the service worker for offline capabilities
@@ -875,4 +1285,3 @@
     </script>
 </body>
 </html>
-
