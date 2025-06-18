@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Expenses - Tracking Daily Expenses</title>
+    <!-- Link to the Web App Manifest for PWA functionality -->
+    <link rel="manifest" href="manifest.json">
+    <!-- Tailwind CSS CDN for minimalist, responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Custom CSS for overall theme and mobile optimization */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            color: #333;
+            direction: rtl; /* Ensure RTL direction for the whole body */
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1rem;
+            background-color: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-height: 100vh; /* Ensure it takes full height on small screens */
+            display: flex;
+            flex-direction: column;
+        }
+        /* Custom styles for tabs */
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #e0e7ff; /* Light blue */
+            color: #4f46e5; /* Darker blue */
+            text-align: center;
+        }
+        .tab-button.active {
+            background-color: #4f46e5; /* Primary blue */
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .tab-content {
+            display: none;
+            padding-top: 1rem;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Input field styling */
+        input[type="text"], input[type="number"] {
+            padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e1; /* Light gray border */
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            width: 100%;
+            transition: border-color 0.2s;
+            text-align: right; /* Align text right for RTL */
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #6366f1; /* Focus blue */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        /* Button styling */
+        button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            background-color: #4f46e5; /* Primary blue */
+            color: #fff;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        button:hover {
+            background-color: #4338ca; /* Darker blue on hover */
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        /* Suggestion buttons */
+        .suggestion-button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background-color: #e0e7ff;
+            color: #4f46e5;
+            border: 1px solid #a5b4fc;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            text-align: center;
+        }
+        .suggestion-button:hover {
+            background-color: #c7d2fe;
+        }
+        /* Expense item styling */
+        .expense-item {
+            background-color: #f8fafc; /* Lighter white */
+            border: 1px solid #e2e8f0; /* Light gray */
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        .expense-item .name {
+            font-weight: 500;
+            color: #333;
+        }
+        .expense-item .details {
+            font-size: 0.875rem;
+            color: #666;
+            text-align: left; /* Align category and price left for RTL */
+        }
+        /* Adjust for icon placement in RTL */
+        .expense-item .details .price {
+            margin-right: 0.5rem; /* Space between category and price */
+            font-weight: 600;
+            color: #4f46e5;
+        }
+        .expense-item .details .category {
+             font-size: 0.75rem;
+             background-color: #bfdbfe; /* Lighter blue for category */
+             color: #1e3a8a; /* Darker blue for category text */
+             padding: 0.2rem 0.5rem;
+             border-radius: 0.5rem;
+             margin-left: 0.5rem; /* Space after category */
+        }
+        /* Monthly summary cards */
+        .summary-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+        .summary-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #4f46e5;
+            margin-bottom: 0.75rem;
+            text-align: right;
+        }
+        .summary-card p {
+            font-size: 1.125rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+            text-align: right;
+        }
+        .summary-card span {
+            font-weight: 700;
+            color: #1e3a8a;
+        }
+        .category-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right;
+        }
+        .category-list li:last-child {
+            border-bottom: none;
+        }
+        .history-item {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right;
+        }
+        .history-item .date {
+            font-weight: 600;
+            color: #4f46e5;
+        }
+        .history-item .count {
+            font-size: 0.875rem;
+            color: #666;
+        }
+        /* Autocomplete suggestions dropdown */
+        .autocomplete-suggestions {
+            border: 1px solid #ddd;
+            max-height: 150px;
+            overflow-y: auto;
+            position: absolute;
+            z-index: 100;
+            background-color: #fff;
+            width: calc(100% - 2rem); /* Match input width, accounting for padding */
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-top: 0.5rem;
+        }
+        .autocomplete-suggestions div {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            text-align: right; /* Align text right for RTL */
+            border-bottom: 1px solid #eee;
+        }
+        .autocomplete-suggestions div:last-child {
+            border-bottom: none;
+        }
+        .autocomplete-suggestions div:hover {
+            background-color: #f0f2f5;
+        }
+         /* User ID display */
+        #userIdDisplay {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 1rem;
+            text-align: center;
+            word-break: break-all; /* Allow long IDs to break */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-2xl font-bold text-center mb-6 text-blue-700">تطبيق مصاريفي 💰</h1>
+        <div id="userIdDisplay" class="text-sm text-gray-500 mb-4">معرف المستخدم: <span id="currentUserId">Loading...</span></div>
+
+        <!-- Tab Navigation -->
+        <div class="flex justify-around bg-blue-100 p-2 rounded-xl mb-6 shadow-sm">
+            <button id="dailyTabBtn" class="tab-button active flex-1 mx-1">
+                <i class="fas fa-calendar-day ml-2"></i> اليوم
+            </button>
+            <button id="monthlyTabBtn" class="tab-button flex-1 mx-1">
+                <i class="fas fa-chart-bar ml-2"></i> الملخص الشهري
+            </button>
+        </div>
+
+        <!-- Daily Input Page -->
+        <div id="dailyPage" class="tab-content active flex-grow">
+            <div class="mb-4 relative">
+                <label for="productName" class="block text-sm font-medium text-gray-700 mb-2 text-right">اسم المنتج:</label>
+                <input type="text" id="productName" placeholder="مثال: سجاير، خضروات طازجة" class="focus:border-blue-500">
+                <div id="autocompleteSuggestions" class="autocomplete-suggestions hidden"></div>
+            </div>
+
+            <div class="mb-4">
+                <label for="productPrice" class="block text-sm font-medium text-gray-700 mb-2 text-right">السعر (درهم إماراتي):</label>
+                <input type="number" id="productPrice" placeholder="مثال: 20.00" step="0.01" class="focus:border-blue-500">
+            </div>
+
+            <div class="mb-4">
+                <label for="categoryDisplay" class="block text-sm font-medium text-gray-700 mb-2 text-right">الفئة المقترحة:</label>
+                <div id="categoryDisplay" class="bg-blue-100 text-blue-800 text-sm font-semibold py-2 px-4 rounded-lg text-right">
+                    (تلقائي)
+                </div>
+            </div>
+
+            <div class="mb-6 flex justify-center">
+                <button id="addExpense" class="w-full py-3 text-lg">
+                    <i class="fas fa-plus ml-2"></i> إضافة مصروف
+                </button>
+            </div>
+
+            <!-- Quick Suggestion Buttons -->
+            <div class="mb-6">
+                <h3 class="text-md font-semibold text-gray-700 mb-3 text-right">اقتراحات سريعة:</h3>
+                <div id="quickSuggestions" class="flex flex-wrap gap-2 justify-end">
+                    <!-- Suggestions will be dynamically loaded here -->
+                </div>
+            </div>
+
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 text-right">مصاريف اليوم <span id="currentDateDisplay" class="text-blue-600"></span>:</h3>
+            <div id="dailyExpenseList" class="flex-grow overflow-y-auto">
+                <!-- Daily expenses will be displayed here -->
+            </div>
+            <div class="mt-6 p-4 bg-blue-50 text-blue-900 font-bold text-xl rounded-xl text-center shadow-md">
+                الإجمالي اليومي: <span id="dailyTotal">0.00 درهم إماراتي</span>
+            </div>
+        </div>
+
+        <!-- Monthly Summary Page -->
+        <div id="monthlyPage" class="tab-content flex-grow">
+            <div class="summary-card">
+                <h3><i class="fas fa-chart-pie ml-2"></i> ملخص الإحصائيات الشهرية</h3>
+                <p>إجمالي الشهر: <span id="monthlyTotal">0.00 درهم إماراتي</span></p>
+                <p>المتوسط اليومي: <span id="dailyAverage">0.00 درهم إماراتي</span></p>
+                <p>الأيام المسجلة: <span id="daysRecorded">0</span></p>
+            </div>
+
+            <div class="summary-card">
+                <h3><i class="fas fa-list-ol ml-2"></i> أعلى فئات الإنفاق</h3>
+                <ul id="topCategoriesList" class="category-list">
+                    <!-- Top categories will be displayed here -->
+                </ul>
+            </div>
+
+            <div class="summary-card">
+                <h3><i class="fas fa-history ml-2"></i> تاريخ المصاريف (آخر 10 أيام)</h3>
+                <div id="expenseHistoryList">
+                    <!-- Expense history will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the Canvas environment (or fallback for local use)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Firebase instances and user ID, accessible globally within this script module
+        let app, db, auth, userId;
+        const currentUserIdDisplay = document.getElementById('currentUserId');
+
+        // --- Firebase Initialization and Authentication ---
+        async function initializeFirebaseAndAuth() {
+            try {
+                if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.projectId) {
+                    console.error("Firebase config is missing or invalid. Please ensure __firebase_config is correctly provided.");
+                    currentUserIdDisplay.textContent = 'خطأ في إعداد Firebase';
+                    // If Firebase cannot be initialized, we should stop here or fallback to local storage
+                    // For this example, we assume Firebase config will be provided in Canvas.
+                    return;
+                }
+                
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Sign in using the initial auth token if available (e.g., in Canvas)
+                // Otherwise, sign in anonymously (generates a new unique ID each time if run locally outside Canvas)
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    console.log("Signed in with custom token.");
+                } else {
+                    await signInAnonymously(auth);
+                    console.log("Signed in anonymously.");
+                }
+
+                // Listen for authentication state changes
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        currentUserIdDisplay.textContent = userId; // Display the user ID
+                        console.log("User ID:", userId);
+                        // Once user ID is available, setup Firestore listener and load data
+                        setupFirestoreListener();
+                    } else {
+                        userId = null;
+                        currentUserIdDisplay.textContent = 'لم يتم تسجيل الدخول';
+                        console.log("No user is signed in.");
+                        // Clear expenses if no user is signed in
+                        expenses = [];
+                        renderDailyExpenses();
+                        updateMonthlySummary();
+                        updateQuickSuggestions();
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing Firebase or signing in:", error);
+                currentUserIdDisplay.textContent = 'خطأ في المصادقة';
+            }
+        }
+
+        // --- Global Variables and Constants (remaining from previous version) ---
+        const MAX_HISTORY_DAYS = 10;
+
+        const DEFAULT_CATEGORIES = [
+            { name: 'سجاير وتدخين', keywords: ['سجاير', 'دخان', 'شيشة', 'معسل'] },
+            { name: 'خضروات طازجة', keywords: ['خضار', 'فاكهة', 'طازجة', 'بندورة', 'خيار', 'تفاح', 'برتقال'] },
+            { name: 'منتجات الألبان', keywords: ['حليب', 'لبن', 'جبنة', 'زبادي', 'قشطة', 'زبدة'] },
+            { name: 'مخبوزات', keywords: ['خبز', 'كعك', 'معجنات', 'كرواسون', 'حلويات', 'دونات'] },
+            { name: 'مشروبات', keywords: ['عصير', 'ماء', 'صودا', 'قهوة', 'شاي', 'مشروب'] },
+            { name: 'بقالة أساسية', keywords: ['أرز', 'سكر', 'زيت', 'دقيق', 'معكرونة', 'بهارات', 'عدس', 'دجاج', 'لحم', 'بيض', 'سمك'] },
+            { name: 'أطعمة معلبة', keywords: ['معلبات', 'تونا', 'فول', 'حمص', 'مربى'] },
+            { name: 'وجبات جاهزة', keywords: ['وجبة', 'مطعم', 'سريع', 'بيتزا', 'شاورما', 'برجر'] },
+        ];
+
+        let expenses = []; // Array to store all expense objects, synced with Firestore
+        let productMemory = {}; // Local cache for autocomplete and quick suggestions
+
+        // --- DOM Elements ---
+        const dailyTabBtn = document.getElementById('dailyTabBtn');
+        const monthlyTabBtn = document.getElementById('monthlyTabBtn');
+        const dailyPage = document.getElementById('dailyPage');
+        const monthlyPage = document.getElementById('monthlyPage');
+
+        const productNameInput = document.getElementById('productName');
+        const productPriceInput = document.getElementById('productPrice');
+        const categoryDisplay = document.getElementById('categoryDisplay');
+        const addExpenseBtn = document.getElementById('addExpense');
+        const dailyExpenseList = document.getElementById('dailyExpenseList');
+        const dailyTotalDisplay = document.getElementById('dailyTotal');
+        const currentDateDisplay = document.getElementById('currentDateDisplay');
+        const quickSuggestionsContainer = document.getElementById('quickSuggestions');
+        const autocompleteSuggestions = document.getElementById('autocompleteSuggestions');
+
+        const monthlyTotalDisplay = document.getElementById('monthlyTotal');
+        const dailyAverageDisplay = document.getElementById('dailyAverage');
+        const daysRecordedDisplay = document.getElementById('daysRecorded');
+        const topCategoriesList = document.getElementById('topCategoriesList');
+        const expenseHistoryList = document.getElementById('expenseHistoryList');
+
+        // --- Helper Functions ---
+
+        /**
+         * Generates a unique ID for an expense item.
+         * @returns {string} A unique ID.
+         */
+        function generateUniqueId() {
+            return '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        /**
+         * Gets the current date in YYYY-MM-DD format.
+         * @returns {string} The formatted date string.
+         */
+        function getCurrentDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        /**
+         * Formats a number as UAE Dirham currency.
+         * @param {number} amount - The amount to format.
+         * @returns {string} The formatted currency string.
+         */
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('ar-AE', {
+                style: 'currency',
+                currency: 'AED',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        /**
+         * Suggests a category based on the product name using keywords and product memory.
+         * @param {string} productName - The name of the product.
+         * @returns {string} The suggested category or 'أخرى' (Other) if no match.
+         */
+        function suggestCategory(productName) {
+            const lowerProductName = productName.toLowerCase();
+
+            // First, check product memory for exact match or close match
+            for (const name in productMemory) {
+                if (lowerProductName.includes(name.toLowerCase()) || name.toLowerCase().includes(lowerProductName)) {
+                    return productMemory[name].lastCategory;
+                }
+            }
+
+            // If not found in memory, use default categories
+            for (const category of DEFAULT_CATEGORIES) {
+                for (const keyword of category.keywords) {
+                    if (lowerProductName.includes(keyword.toLowerCase())) {
+                        return category.name;
+                    }
+                }
+            }
+            return 'أخرى'; // Default category if no match
+        }
+
+        /**
+         * Renders the list of expenses for the current day and updates the daily total.
+         */
+        function renderDailyExpenses() {
+            const today = getCurrentDate();
+            const todayExpenses = expenses.filter(exp => exp.date === today);
+            dailyExpenseList.innerHTML = '';
+            let dailyTotal = 0;
+
+            if (todayExpenses.length === 0) {
+                dailyExpenseList.innerHTML = `
+                    <p class="text-center text-gray-500 py-8">
+                        لا توجد مصاريف لهذا اليوم بعد. أضف واحداً!
+                        <i class="fas fa-hand-pointer mr-1"></i>
+                    </p>
+                `;
+            } else {
+                todayExpenses.forEach(exp => {
+                    dailyTotal += exp.price;
+                    const expenseItem = document.createElement('div');
+                    expenseItem.className = 'expense-item';
+                    expenseItem.innerHTML = `
+                        <div class="name text-right">${exp.name}</div>
+                        <div class="details flex items-center justify-start">
+                            <span class="category">${exp.category}</span>
+                            <span class="price">${formatCurrency(exp.price)}</span>
+                            <button class="delete-btn text-red-500 hover:text-red-700 ml-2 p-1 rounded-full" data-id="${exp.id}" aria-label="حذف المصروف">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    `;
+                    dailyExpenseList.appendChild(expenseItem);
+                });
+            }
+            dailyTotalDisplay.textContent = formatCurrency(dailyTotal);
+
+            // Add event listeners for delete buttons
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.onclick = (event) => {
+                    const idToDelete = event.currentTarget.dataset.id;
+                    deleteExpenseFromFirestore(idToDelete); // Delete from Firestore
+                };
+            });
+        }
+
+        /**
+         * Rebuilds productMemory from the current expenses array (synced from Firestore).
+         * This ensures quick suggestions are always up-to-date with cloud data.
+         */
+        function rebuildProductMemoryFromExpenses() {
+            productMemory = {}; // Clear existing memory
+            expenses.forEach(exp => {
+                if (productMemory[exp.name]) {
+                    productMemory[exp.name].lastPrice = exp.price;
+                    productMemory[exp.name].lastCategory = exp.category;
+                    productMemory[exp.name].frequency = (productMemory[exp.name].frequency || 0) + 1;
+                } else {
+                    productMemory[exp.name] = { lastPrice: exp.price, lastCategory: exp.category, frequency: 1 };
+                }
+            });
+        }
+
+        /**
+         * Renders quick suggestion buttons based on frequently bought items from productMemory.
+         */
+        function updateQuickSuggestions() {
+            quickSuggestionsContainer.innerHTML = '';
+            const sortedProducts = Object.entries(productMemory)
+                .sort(([, a], [, b]) => b.frequency - a.frequency)
+                .slice(0, 5); // Show top 5 frequent items
+
+            if (sortedProducts.length === 0) {
+                quickSuggestionsContainer.innerHTML = `
+                    <p class="text-gray-500 text-sm w-full text-center">
+                        ابدأ بإضافة المصاريف لترى الاقتراحات السريعة هنا.
+                    </p>
+                `;
+                return;
+            }
+
+            sortedProducts.forEach(([name, data]) => {
+                const button = document.createElement('button');
+                button.className = 'suggestion-button';
+                button.textContent = `${name} (${formatCurrency(data.lastPrice)})`;
+                button.onclick = () => {
+                    productNameInput.value = name;
+                    productPriceInput.value = data.lastPrice;
+                    categoryDisplay.textContent = data.lastCategory;
+                    productPriceInput.focus();
+                };
+                quickSuggestionsContainer.appendChild(button);
+            });
+        }
+
+        /**
+         * Handles the addition of a new expense and saves it to Firestore.
+         */
+        async function addExpense() {
+            const productName = productNameInput.value.trim();
+            const productPrice = parseFloat(productPriceInput.value);
+            const suggestedCategory = categoryDisplay.textContent.replace('(تلقائي)', '').trim();
+
+            if (!productName || isNaN(productPrice) || productPrice <= 0) {
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.textContent = 'الرجاء إدخال اسم المنتج وسعره بشكل صحيح.';
+                feedbackDiv.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                document.body.appendChild(feedbackDiv);
+                setTimeout(() => feedbackDiv.remove(), 3000);
+                return;
+            }
+
+            const newExpense = {
+                id: generateUniqueId(),
+                date: getCurrentDate(),
+                name: productName,
+                price: productPrice,
+                category: suggestedCategory
+            };
+
+            await saveExpenseToFirestore(newExpense); // Save to Firestore
+
+            // Clear input fields after adding
+            productNameInput.value = '';
+            productPriceInput.value = '';
+            categoryDisplay.textContent = '(تلقائي)';
+            productNameInput.focus();
+        }
+
+        /**
+         * Updates and renders the monthly summary page.
+         */
+        function updateMonthlySummary() {
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+
+            const monthlyExpenses = expenses.filter(exp => {
+                const expDate = new Date(exp.date);
+                return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;
+            });
+
+            let monthlyTotal = 0;
+            const uniqueDays = new Set();
+            const categoryTotals = {};
+            const dailyItemCounts = {};
+
+            monthlyExpenses.forEach(exp => {
+                monthlyTotal += exp.price;
+                uniqueDays.add(exp.date);
+                categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.price;
+                dailyItemCounts[exp.date] = (dailyItemCounts[exp.date] || 0) + 1;
+            });
+
+            const daysRecorded = uniqueDays.size;
+            const dailyAverage = daysRecorded > 0 ? monthlyTotal / daysRecorded : 0;
+
+            monthlyTotalDisplay.textContent = formatCurrency(monthlyTotal);
+            dailyAverageDisplay.textContent = formatCurrency(dailyAverage);
+            daysRecordedDisplay.textContent = daysRecorded;
+
+            // Render Top Categories
+            topCategoriesList.innerHTML = '';
+            const sortedCategories = Object.entries(categoryTotals)
+                .sort(([, a], [, b]) => b - a);
+
+            if (sortedCategories.length === 0) {
+                 topCategoriesList.innerHTML = `
+                    <p class="text-center text-gray-500 py-4">لا توجد بيانات للفئات بعد.</p>
+                 `;
+            } else {
+                sortedCategories.forEach(([category, total]) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>${category}</span>
+                        <span>${formatCurrency(total)}</span>
+                    `;
+                    topCategoriesList.appendChild(li);
+                });
+            }
+
+            // Render Expense History (last 10 days)
+            expenseHistoryList.innerHTML = '';
+            const sortedDates = Array.from(uniqueDays).sort().reverse();
+            const recentDates = sortedDates.slice(0, MAX_HISTORY_DAYS);
+
+            if (recentDates.length === 0) {
+                expenseHistoryList.innerHTML = `
+                    <p class="text-center text-gray-500 py-4">لا يوجد تاريخ للمصاريف بعد.</p>
+                `;
+            } else {
+                recentDates.forEach(date => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.innerHTML = `
+                        <span class="date">${date}</span>
+                        <span class="count">${dailyItemCounts[date]} عناصر</span>
+                    `;
+                    expenseHistoryList.appendChild(historyItem);
+                });
+            }
+        }
+
+        /**
+         * Handles product name input for auto-complete and price/category recall.
+         */
+        function handleProductNameInput() {
+            const inputVal = productNameInput.value.trim();
+            autocompleteSuggestions.innerHTML = '';
+
+            if (inputVal.length > 0) {
+                const matches = Object.keys(productMemory).filter(name =>
+                    name.toLowerCase().includes(inputVal.toLowerCase())
+                ).slice(0, 5);
+
+                if (matches.length > 0) {
+                    autocompleteSuggestions.classList.remove('hidden');
+                    matches.forEach(name => {
+                        const div = document.createElement('div');
+                        div.textContent = name;
+                        div.onclick = () => {
+                            productNameInput.value = name;
+                            productPriceInput.value = productMemory[name].lastPrice;
+                            categoryDisplay.textContent = productMemory[name].lastCategory;
+                            autocompleteSuggestions.classList.add('hidden');
+                            productPriceInput.focus();
+                        };
+                        autocompleteSuggestions.appendChild(div);
+                    });
+                } else {
+                    autocompleteSuggestions.classList.add('hidden');
+                }
+            } else {
+                autocompleteSuggestions.classList.add('hidden');
+            }
+
+            const suggestedCat = suggestCategory(inputVal);
+            categoryDisplay.textContent = suggestedCat === 'أخرى' ? '(تلقائي)' : suggestedCat;
+        }
+
+        // --- Firebase Data Operations ---
+
+        /**
+         * Saves an expense document to Firestore.
+         * @param {object} expense - The expense object to save.
+         */
+        async function saveExpenseToFirestore(expense) {
+            if (!db || !userId) {
+                console.error("Firestore not initialized or userId not available. Cannot save expense.");
+                return;
+            }
+            try {
+                // Store in /artifacts/{appId}/users/{userId}/expenses/{expense.id}
+                const expenseDocRef = doc(db, `artifacts/${appId}/users/${userId}/expenses`, expense.id);
+                await setDoc(expenseDocRef, expense); // Use setDoc to set/update by ID
+                console.log("Expense saved to Firestore:", expense.id);
+            } catch (e) {
+                console.error("Error saving document to Firestore: ", e);
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.textContent = 'حدث خطأ أثناء حفظ المصروف. الرجاء المحاولة مرة أخرى.';
+                feedbackDiv.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                document.body.appendChild(feedbackDiv);
+                setTimeout(() => feedbackDiv.remove(), 3000);
+            }
+        }
+
+        /**
+         * Deletes an expense document from Firestore.
+         * @param {string} id - The ID of the expense to delete.
+         */
+        async function deleteExpenseFromFirestore(id) {
+            if (!db || !userId) {
+                console.error("Firestore not initialized or userId not available. Cannot delete expense.");
+                return;
+            }
+            try {
+                const expenseDocRef = doc(db, `artifacts/${appId}/users/${userId}/expenses`, id);
+                await deleteDoc(expenseDocRef);
+                console.log("Expense deleted from Firestore:", id);
+            } catch (e) {
+                console.error("Error deleting document from Firestore: ", e);
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.textContent = 'حدث خطأ أثناء حذف المصروف. الرجاء المحاولة مرة أخرى.';
+                feedbackDiv.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                document.body.appendChild(feedbackDiv);
+                setTimeout(() => feedbackDiv.remove(), 3000);
+            }
+        }
+
+        /**
+         * Sets up a real-time listener for expenses from Firestore.
+         * This function will be called once authentication is ready.
+         */
+        function setupFirestoreListener() {
+            if (!db || !userId) {
+                console.error("Firestore not initialized or userId not available for listener setup.");
+                return;
+            }
+            const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
+
+            // onSnapshot provides real-time updates
+            onSnapshot(expensesCollectionRef, (snapshot) => {
+                const updatedExpenses = [];
+                snapshot.forEach(doc => {
+                    updatedExpenses.push(doc.data());
+                });
+                expenses = updatedExpenses; // Update local expenses array with fresh data from Firestore
+                console.log("Real-time expenses updated from Firestore. Count:", expenses.length);
+
+                // Update UI and derived data
+                renderDailyExpenses();
+                rebuildProductMemoryFromExpenses(); // Rebuild product memory based on the latest cloud data
+                updateQuickSuggestions();
+                updateMonthlySummary(); // Update monthly summary
+            }, (error) => {
+                console.error("Error listening to Firestore updates:", error);
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.textContent = 'خطأ في جلب البيانات من السحابة.';
+                feedbackDiv.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                document.body.appendChild(feedbackDiv);
+                setTimeout(() => feedbackDiv.remove(), 3000);
+            });
+        }
+
+
+        // --- Event Listeners ---
+
+        // Tab switching
+        dailyTabBtn.addEventListener('click', () => {
+            dailyTabBtn.classList.add('active');
+            monthlyTabBtn.classList.remove('active');
+            dailyPage.classList.add('active');
+            monthlyPage.classList.remove('active');
+            // Data is updated by onSnapshot, just render
+        });
+
+        monthlyTabBtn.addEventListener('click', () => {
+            monthlyTabBtn.classList.add('active');
+            dailyTabBtn.classList.remove('active');
+            monthlyPage.classList.add('active');
+            dailyPage.classList.remove('active');
+            updateMonthlySummary(); // Explicitly update when switching to ensure it's fresh
+        });
+
+        // Add expense button click
+        addExpenseBtn.addEventListener('click', addExpense);
+
+        // Keyboard support (Enter key)
+        productNameInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (!autocompleteSuggestions.classList.contains('hidden') && autocompleteSuggestions.children.length > 0) {
+                    autocompleteSuggestions.children[0].click();
+                } else {
+                    productPriceInput.focus();
+                }
+            }
+        });
+
+        productPriceInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                addExpense();
+            }
+        });
+
+        // Product name input for suggestions and category auto-detection
+        productNameInput.addEventListener('input', handleProductNameInput);
+
+        // Hide autocomplete suggestions when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!productNameInput.contains(event.target) && !autocompleteSuggestions.contains(event.target)) {
+                autocompleteSuggestions.classList.add('hidden');
+            }
+        });
+
+        // --- PWA Service Worker Registration ---
+        // This part registers the service worker for offline capabilities
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            currentDateDisplay.textContent = getCurrentDate(); // Display current date
+            initializeFirebaseAndAuth(); // Start Firebase authentication and data loading
+            // Initial render functions will be called after userId is available via onAuthStateChanged and setupFirestoreListener
+        });
+    </script>
+</body>
+</html>
