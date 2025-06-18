@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Expenses - Tracking Daily Expenses</title>
+    <!-- Link to the Web App Manifest for PWA functionality -->
     <link rel="manifest" href="manifest.json">
+    <!-- Tailwind CSS CDN for minimalist, responsive styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         /* Custom CSS for overall theme and mobile optimization */
@@ -218,9 +221,9 @@
         .autocomplete-suggestions div:hover {
             background-color: #f0f2f5;
         }
-         /* User ID display */
+         /* User ID display - Hidden as Firebase is removed */
         #userIdDisplay {
-            display: none; /* Hide user ID display as it's not relevant without Firebase Auth */
+            display: none; 
         }
 
         /* Daily Summary Card styling */
@@ -255,6 +258,7 @@
         <h1 class="text-2xl font-bold text-center mb-6 text-blue-700">تطبيق مصاريفي 💰</h1>
         <div id="userIdDisplay" class="text-sm text-gray-500 mb-4">معرف المستخدم: <span id="currentUserId"></span></div>
 
+        <!-- Tab Navigation -->
         <div class="flex justify-around bg-blue-100 p-2 rounded-xl mb-6 shadow-sm">
             <button id="dailyTabBtn" class="tab-button active flex-1 mx-1">
                 <i class="fas fa-calendar-day ml-2"></i> اليوم
@@ -264,47 +268,67 @@
             </button>
         </div>
 
+        <!-- Daily Input Page -->
         <div id="dailyPage" class="tab-content active flex-grow">
-            <div class="mb-4 relative">
-                <label for="productName" class="block text-sm font-medium text-gray-700 mb-2 text-right">اسم المنتج:</label>
-                <input type="text" id="productName" placeholder="مثال: سجاير، خضروات طازجة" class="focus:border-blue-500">
-                <div id="autocompleteSuggestions" class="autocomplete-suggestions hidden"></div>
-            </div>
-
-            <div class="mb-4">
-                <label for="productPrice" class="block text-sm font-medium text-gray-700 mb-2 text-right">السعر (درهم إماراتي):</label>
-                <input type="number" id="productPrice" placeholder="مثال: 20.00" step="0.01" class="focus:border-blue-500">
-            </div>
-
+            <!-- Date selection for current entry -->
             <div class="mb-4">
                 <label for="expenseDate" class="block text-sm font-medium text-gray-700 mb-2 text-right">التاريخ:</label>
                 <input type="date" id="expenseDate" class="focus:border-blue-500">
             </div>
 
-            <div class="mb-4">
-                <label for="categoryDisplay" class="block text-sm font-medium text-gray-700 mb-2 text-right">الفئة المقترحة:</label>
-                <div id="categoryDisplay" class="bg-blue-100 text-blue-800 text-sm font-semibold py-2 px-4 rounded-lg text-right">
-                    (تلقائي)
+            <!-- Product Entry for selected date -->
+            <div class="p-4 bg-blue-50 rounded-xl shadow-md mb-6">
+                <h3 class="text-lg font-semibold text-blue-700 mb-4 text-right">إضافة مصروف لـ <span id="selectedDateDisplay" class="text-blue-900"></span>:</h3>
+                <div class="mb-4 relative">
+                    <label for="productName" class="block text-sm font-medium text-gray-700 mb-2 text-right">اسم المنتج:</label>
+                    <input type="text" id="productName" placeholder="مثال: سجاير، خضروات طازجة" class="focus:border-blue-500">
+                    <div id="autocompleteSuggestions" class="autocomplete-suggestions hidden"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="productPrice" class="block text-sm font-medium text-gray-700 mb-2 text-right">السعر (درهم إماراتي):</label>
+                    <input type="number" id="productPrice" placeholder="مثال: 20.00" step="0.01" class="focus:border-blue-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="categoryDisplay" class="block text-sm font-medium text-gray-700 mb-2 text-right">الفئة المقترحة:</label>
+                    <div id="categoryDisplay" class="bg-blue-100 text-blue-800 text-sm font-semibold py-2 px-4 rounded-lg text-right">
+                        (تلقائي)
+                    </div>
+                </div>
+
+                <div class="mb-4 flex justify-center">
+                    <button id="addExpense" class="w-full py-3 text-lg">
+                        <i class="fas fa-plus ml-2"></i> إضافة مصروف
+                    </button>
+                </div>
+                
+                <!-- Quick Suggestion Buttons -->
+                <div class="mb-6">
+                    <h3 class="text-md font-semibold text-gray-700 mb-3 text-right">اقتراحات سريعة:</h3>
+                    <div id="quickSuggestions" class="flex flex-wrap gap-2 justify-end">
+                        <!-- Suggestions will be dynamically loaded here -->
+                    </div>
+                </div>
+
+                <!-- List of expenses for the CURRENTLY SELECTED DATE -->
+                <h4 class="text-md font-semibold text-gray-800 mb-3 text-right">مصاريف هذا التاريخ:</h4>
+                <div id="currentDateExpenseList" class="mb-4">
+                    <!-- Specific expenses for the selected date will be listed here -->
+                </div>
+                <div class="mt-2 p-3 bg-blue-100 text-blue-900 font-bold text-lg rounded-lg text-center shadow-sm">
+                    إجمالي هذا التاريخ: <span id="currentDateTotal">0.00 درهم إماراتي</span>
                 </div>
             </div>
 
-            <div class="mb-6 flex justify-center">
-                <button id="addExpense" class="w-full py-3 text-lg">
-                    <i class="fas fa-plus ml-2"></i> إضافة مصروف
-                </button>
-            </div>
-
-            <div class="mb-6">
-                <h3 class="text-md font-semibold text-gray-700 mb-3 text-right">اقتراحات سريعة:</h3>
-                <div id="quickSuggestions" class="flex flex-wrap gap-2 justify-end">
-                    </div>
-            </div>
-
+            <!-- Daily Summary Cards for ALL recorded days -->
             <h3 class="text-lg font-semibold text-gray-800 mb-4 text-right">ملخص مصاريف الأيام:</h3>
             <div id="dailySummaryCards" class="flex-grow overflow-y-auto">
-                </div>
+                <!-- Daily summary cards will be displayed here -->
+            </div>
         </div>
 
+        <!-- Monthly Summary Page -->
         <div id="monthlyPage" class="tab-content flex-grow">
             <div class="summary-card">
                 <h3><i class="fas fa-chart-pie ml-2"></i> ملخص الإحصائيات الشهرية</h3>
@@ -316,13 +340,15 @@
             <div class="summary-card">
                 <h3><i class="fas fa-list-ol ml-2"></i> أعلى فئات الإنفاق</h3>
                 <ul id="topCategoriesList" class="category-list">
-                    </ul>
+                    <!-- Top categories will be displayed here -->
+                </ul>
             </div>
 
             <div class="summary-card">
                 <h3><i class="fas fa-history ml-2"></i> تاريخ المصاريف (آخر 10 أيام)</h3>
                 <div id="expenseHistoryList">
-                    </div>
+                    <!-- Expense history will be displayed here -->
+                </div>
             </div>
         </div>
     </div>
@@ -356,11 +382,12 @@
         const productNameInput = document.getElementById('productName');
         const productPriceInput = document.getElementById('productPrice');
         const expenseDateInput = document.getElementById('expenseDate'); // Date input
+        const selectedDateDisplay = document.getElementById('selectedDateDisplay'); // To show selected date in input card
         const categoryDisplay = document.getElementById('categoryDisplay');
         const addExpenseBtn = document.getElementById('addExpense');
-        const dailySummaryCardsContainer = document.getElementById('dailySummaryCards'); // Changed from dailyExpenseList
-        const dailyTotalDisplay = document.getElementById('dailyTotal'); // Keep for potential future use or current day total if needed
-        const currentDateDisplay = document.getElementById('currentDateDisplay'); // Used for daily summary card (now just a label)
+        const currentDateExpenseList = document.getElementById('currentDateExpenseList'); // Specific items for selected date
+        const currentDateTotalDisplay = document.getElementById('currentDateTotal'); // Total for selected date
+        const dailySummaryCardsContainer = document.getElementById('dailySummaryCards'); // All daily summaries
         const quickSuggestionsContainer = document.getElementById('quickSuggestions');
         const autocompleteSuggestions = document.getElementById('autocompleteSuggestions');
 
@@ -457,7 +484,51 @@
         }
 
         /**
-         * Renders daily summary cards.
+         * Renders detailed expenses for the currently selected date.
+         */
+        function renderCurrentDateExpenses() {
+            const selectedDate = expenseDateInput.value;
+            selectedDateDisplay.textContent = selectedDate; // Update display in input card
+            const expensesForSelectedDate = expenses.filter(exp => exp.date === selectedDate);
+            currentDateExpenseList.innerHTML = '';
+            let totalForSelectedDate = 0;
+
+            if (expensesForSelectedDate.length === 0) {
+                currentDateExpenseList.innerHTML = `
+                    <p class="text-center text-gray-500 py-4 text-sm">لا توجد مصاريف لهذا التاريخ بعد. أضف واحداً!</p>
+                `;
+            } else {
+                expensesForSelectedDate.forEach(exp => {
+                    totalForSelectedDate += exp.price;
+                    const expenseItem = document.createElement('div');
+                    expenseItem.className = 'expense-item';
+                    expenseItem.innerHTML = `
+                        <div class="name text-right">${exp.name}</div>
+                        <div class="details flex items-center justify-start">
+                            <span class="category">${exp.category}</span>
+                            <span class="price">${formatCurrency(exp.price)}</span>
+                            <button class="delete-btn text-red-500 hover:text-red-700 ml-2 p-1 rounded-full" data-id="${exp.id}" aria-label="حذف المصروف">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    `;
+                    currentDateExpenseList.appendChild(expenseItem);
+                });
+            }
+            currentDateTotalDisplay.textContent = formatCurrency(totalForSelectedDate);
+
+            // Add event listeners for delete buttons
+            document.querySelectorAll('#currentDateExpenseList .delete-btn').forEach(button => {
+                button.onclick = (event) => {
+                    const idToDelete = event.currentTarget.dataset.id;
+                    deleteExpense(idToDelete); // Delete from local storage
+                };
+            });
+        }
+
+
+        /**
+         * Renders daily summary cards for all recorded days.
          */
         function renderDailySummaries() {
             dailySummaryCardsContainer.innerHTML = '';
@@ -544,7 +615,7 @@
                     productNameInput.value = name;
                     productPriceInput.value = data.lastPrice;
                     categoryDisplay.textContent = data.lastCategory;
-                    expenseDateInput.value = getTodayDateString(); // Reset date to today for quick add
+                    // expenseDateInput.value = getTodayDateString(); // Keep current selected date for quick add
                     productPriceInput.focus();
                 };
                 quickSuggestionsContainer.appendChild(button);
@@ -584,9 +655,13 @@
             // Clear input fields after adding
             productNameInput.value = '';
             productPriceInput.value = '';
-            expenseDateInput.value = getTodayDateString(); // Reset date to today after adding
+            // expenseDateInput.value = getTodayDateString(); // DO NOT reset date here, keep selected date
             categoryDisplay.textContent = '(تلقائي)';
             productNameInput.focus();
+
+            renderCurrentDateExpenses(); // Re-render items for current date
+            renderDailySummaries(); // Re-render all daily summary cards
+            updateMonthlySummary(); // Ensure monthly summary is updated
         }
 
         /**
@@ -596,6 +671,7 @@
         function deleteExpense(id) {
             expenses = expenses.filter(exp => exp.id !== id);
             saveExpenses(); // Save updated expenses to local storage
+            renderCurrentDateExpenses(); // Re-render items for current date
             renderDailySummaries(); // Re-render summaries
             updateMonthlySummary(); // Update monthly summary
         }
@@ -721,6 +797,7 @@
             dailyPage.classList.add('active');
             monthlyPage.classList.remove('active');
             renderDailySummaries(); // Re-render daily page with summaries
+            renderCurrentDateExpenses(); // Re-render expenses for the current selected date
         });
 
         monthlyTabBtn.addEventListener('click', () => {
@@ -763,6 +840,11 @@
             }
         });
 
+        // Date input change event
+        expenseDateInput.addEventListener('change', () => {
+            renderCurrentDateExpenses(); // Re-render expenses for the newly selected date
+        });
+
         // --- PWA Service Worker Registration ---
         // This part registers the service worker for offline capabilities
         if ('serviceWorker' in navigator) {
@@ -779,14 +861,18 @@
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Set default date to today
-            expenseDateInput.value = getTodayDateString();
-            
+            // Set default date to today and display it
+            const todayString = getTodayDateString();
+            expenseDateInput.value = todayString;
+            selectedDateDisplay.textContent = todayString; // Initialize selected date display
+
             loadExpenses(); // Load existing expenses from local storage
-            renderDailySummaries(); // Render daily summaries after loading
+            renderDailySummaries(); // Render all daily summary cards
+            renderCurrentDateExpenses(); // Render expenses for today (initial selected date)
             updateQuickSuggestions(); // Update quick suggestions on load
             updateMonthlySummary(); // Initialize monthly summary
         });
     </script>
 </body>
 </html>
+
