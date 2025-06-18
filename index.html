@@ -54,7 +54,7 @@
             display: block;
         }
         /* Input field styling */
-        input[type="text"], input[type="number"] {
+        input[type="text"], input[type="number"], input[type="date"] {
             padding: 0.75rem 1rem;
             border: 1px solid #cbd5e1; /* Light gray border */
             border-radius: 0.75rem;
@@ -63,7 +63,7 @@
             transition: border-color 0.2s;
             text-align: right; /* Align text right for RTL */
         }
-        input[type="text"]:focus, input[type="number"]:focus {
+        input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus {
             outline: none;
             border-color: #6366f1; /* Focus blue */
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
@@ -260,6 +260,11 @@
             </div>
 
             <div class="mb-4">
+                <label for="expenseDate" class="block text-sm font-medium text-gray-700 mb-2 text-right">التاريخ:</label>
+                <input type="date" id="expenseDate" class="focus:border-blue-500">
+            </div>
+
+            <div class="mb-4">
                 <label for="categoryDisplay" class="block text-sm font-medium text-gray-700 mb-2 text-right">الفئة المقترحة:</label>
                 <div id="categoryDisplay" class="bg-blue-100 text-blue-800 text-sm font-semibold py-2 px-4 rounded-lg text-right">
                     (تلقائي)
@@ -318,10 +323,10 @@
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, enablePersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global variables provided by the Canvas environment (or fallback for local use)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-expenses-app-id'; // Fallback app ID for local testing
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
@@ -332,25 +337,51 @@
         // --- Firebase Initialization and Authentication ---
         async function initializeFirebaseAndAuth() {
             try {
+                // Check if firebaseConfig is provided (it will be by Canvas) or if we need a dummy for local testing
                 if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.projectId) {
-                    console.error("Firebase config is missing or invalid. Please ensure __firebase_config is correctly provided.");
-                    currentUserIdDisplay.textContent = 'خطأ في إعداد Firebase';
-                    // If Firebase cannot be initialized, we should stop here or fallback to local storage
-                    // For this example, we assume Firebase config will be provided in Canvas.
-                    return;
+                    console.warn("Firebase config not provided by Canvas. Using a dummy config. Offline persistence will not work and data will not persist across sessions if not running in Canvas.");
+                    currentUserIdDisplay.textContent = 'خطأ: إعدادات Firebase مفقودة';
+                    // For local testing outside Canvas, you would typically add your actual Firebase config here
+                    // Example:
+                    // firebaseConfig = {
+                    //     apiKey: "YOUR_API_KEY",
+                    //     authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+                    //     projectId: "YOUR_PROJECT_ID",
+                    //     storageBucket: "YOUR_PROJECT_ID.appspot.com",
+                    //     messagingSenderId: "YOUR_SENDER_ID",
+                    //     appId: "YOUR_APP_ID"
+                    // };
+                    return; // Exit if config is truly missing to prevent errors
                 }
                 
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
 
+                // Enable offline persistence for Firestore
+                // This will store data locally and sync when online.
+                try {
+                    await enablePersistence(db);
+                    console.log("Firestore offline persistence enabled.");
+                } catch (err) {
+                    if (err.code === 'failed-precondition') {
+                        // Multiple tabs open, persistence can only be enabled in one tab
+                        console.warn("Firestore persistence failed: Multiple tabs open. Only one tab can enable persistence at a time.");
+                    } else if (err.code === 'unimplemented') {
+                        // The browser doesn't support all features needed for persistence
+                        console.warn("Firestore persistence failed: Browser does not support persistence.");
+                    } else {
+                        console.error("Error enabling Firestore persistence:", err);
+                    }
+                }
+
                 // Sign in using the initial auth token if available (e.g., in Canvas)
-                // Otherwise, sign in anonymously (generates a new unique ID each time if run locally outside Canvas)
+                // Otherwise, sign in anonymously (generates a new unique ID for the user/device)
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                     console.log("Signed in with custom token.");
                 } else {
-                    await signInAnonymously(auth);
+                    await signInAnonymously(auth); // Sign in anonymously
                     console.log("Signed in anonymously.");
                 }
 
@@ -367,7 +398,7 @@
                         currentUserIdDisplay.textContent = 'لم يتم تسجيل الدخول';
                         console.log("No user is signed in.");
                         // Clear expenses if no user is signed in
-                        expenses = [];
+                        expenses = []; // Clear local data if no authenticated user
                         renderDailyExpenses();
                         updateMonthlySummary();
                         updateQuickSuggestions();
@@ -379,7 +410,7 @@
             }
         }
 
-        // --- Global Variables and Constants (remaining from previous version) ---
+        // --- Global Variables and Constants ---
         const MAX_HISTORY_DAYS = 10;
 
         const DEFAULT_CATEGORIES = [
@@ -404,6 +435,7 @@
 
         const productNameInput = document.getElementById('productName');
         const productPriceInput = document.getElementById('productPrice');
+        const expenseDateInput = document.getElementById('expenseDate'); // New Date input
         const categoryDisplay = document.getElementById('categoryDisplay');
         const addExpenseBtn = document.getElementById('addExpense');
         const dailyExpenseList = document.getElementById('dailyExpenseList');
@@ -432,7 +464,7 @@
          * Gets the current date in YYYY-MM-DD format.
          * @returns {string} The formatted date string.
          */
-        function getCurrentDate() {
+        function getTodayDateString() {
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
@@ -484,7 +516,7 @@
          * Renders the list of expenses for the current day and updates the daily total.
          */
         function renderDailyExpenses() {
-            const today = getCurrentDate();
+            const today = getTodayDateString();
             const todayExpenses = expenses.filter(exp => exp.date === today);
             dailyExpenseList.innerHTML = '';
             let dailyTotal = 0;
@@ -568,6 +600,7 @@
                     productNameInput.value = name;
                     productPriceInput.value = data.lastPrice;
                     categoryDisplay.textContent = data.lastCategory;
+                    expenseDateInput.value = getTodayDateString(); // Reset date to today for quick add
                     productPriceInput.focus();
                 };
                 quickSuggestionsContainer.appendChild(button);
@@ -580,11 +613,12 @@
         async function addExpense() {
             const productName = productNameInput.value.trim();
             const productPrice = parseFloat(productPriceInput.value);
+            const expenseDate = expenseDateInput.value; // Get selected date
             const suggestedCategory = categoryDisplay.textContent.replace('(تلقائي)', '').trim();
 
-            if (!productName || isNaN(productPrice) || productPrice <= 0) {
+            if (!productName || isNaN(productPrice) || productPrice <= 0 || !expenseDate) {
                 const feedbackDiv = document.createElement('div');
-                feedbackDiv.textContent = 'الرجاء إدخال اسم المنتج وسعره بشكل صحيح.';
+                feedbackDiv.textContent = 'الرجاء إدخال اسم المنتج والسعر والتاريخ بشكل صحيح.';
                 feedbackDiv.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
                 document.body.appendChild(feedbackDiv);
                 setTimeout(() => feedbackDiv.remove(), 3000);
@@ -593,10 +627,11 @@
 
             const newExpense = {
                 id: generateUniqueId(),
-                date: getCurrentDate(),
+                date: expenseDate, // Use the selected date
                 name: productName,
                 price: productPrice,
-                category: suggestedCategory
+                category: suggestedCategory,
+                timestamp: new Date().toISOString() // Add a timestamp for potential sorting/ordering later
             };
 
             await saveExpenseToFirestore(newExpense); // Save to Firestore
@@ -604,6 +639,7 @@
             // Clear input fields after adding
             productNameInput.value = '';
             productPriceInput.value = '';
+            expenseDateInput.value = getTodayDateString(); // Reset date to today after adding
             categoryDisplay.textContent = '(تلقائي)';
             productNameInput.focus();
         }
@@ -661,8 +697,9 @@
 
             // Render Expense History (last 10 days)
             expenseHistoryList.innerHTML = '';
-            const sortedDates = Array.from(uniqueDays).sort().reverse();
-            const recentDates = sortedDates.slice(0, MAX_HISTORY_DAYS);
+            // Get all unique dates from expenses, sort them descending, and take the last MAX_HISTORY_DAYS
+            const allUniqueDates = [...new Set(expenses.map(exp => exp.date))].sort().reverse();
+            const recentDates = allUniqueDates.slice(0, MAX_HISTORY_DAYS);
 
             if (recentDates.length === 0) {
                 expenseHistoryList.innerHTML = `
@@ -670,11 +707,12 @@
                 `;
             } else {
                 recentDates.forEach(date => {
+                    const itemsForDate = expenses.filter(exp => exp.date === date).length;
                     const historyItem = document.createElement('div');
                     historyItem.className = 'history-item';
                     historyItem.innerHTML = `
                         <span class="date">${date}</span>
-                        <span class="count">${dailyItemCounts[date]} عناصر</span>
+                        <span class="count">${itemsForDate} عناصر</span>
                     `;
                     expenseHistoryList.appendChild(historyItem);
                 });
@@ -811,7 +849,7 @@
             monthlyTabBtn.classList.remove('active');
             dailyPage.classList.add('active');
             monthlyPage.classList.remove('active');
-            // Data is updated by onSnapshot, just render
+            renderDailyExpenses(); // Re-render daily page when switching back
         });
 
         monthlyTabBtn.addEventListener('click', () => {
@@ -870,7 +908,9 @@
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-            currentDateDisplay.textContent = getCurrentDate(); // Display current date
+            // Set default date to today
+            expenseDateInput.value = getTodayDateString();
+            currentDateDisplay.textContent = getTodayDateString(); // Display current date
             initializeFirebaseAndAuth(); // Start Firebase authentication and data loading
             // Initial render functions will be called after userId is available via onAuthStateChanged and setupFirestoreListener
         });
