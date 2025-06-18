@@ -479,11 +479,11 @@
     <!-- Confirmation Modal -->
     <div id="confirmModalOverlay" class="modal-overlay">
         <div class="modal-content">
-            <h3 class="text-xl font-bold mb-4">تأكيد الحذف</h3>
-            <p id="confirmModalText" class="mb-6">هل أنت متأكد أنك تريد حذف هذا المصروف؟</p>
+            <h3 class="text-xl font-bold mb-4">تأكيد الإجراء</h3>
+            <p id="confirmModalText" class="mb-6">هل أنت متأكد؟</p>
             <div class="modal-buttons">
-                <button id="confirmDeleteBtn" class="delete-button">نعم، احذف</button>
-                <button id="cancelDeleteBtn" class="secondary-button">إلغاء</button>
+                <button id="confirmActionBtn" class="delete-button">تأكيد</button>
+                <button id="cancelActionBtn" class="secondary-button">إلغاء</button>
             </div>
         </div>
     </div>
@@ -538,12 +538,12 @@
         const topCategoriesList = document.getElementById('topCategoriesList');
         const expenseHistoryList = document.getElementById('expenseHistoryList');
 
-        // Modal Elements
+        // Modal Elements (unified for all confirmations)
         const confirmModalOverlay = document.getElementById('confirmModalOverlay');
         const confirmModalText = document.getElementById('confirmModalText');
-        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-        let expenseToDeleteId = null; // Store ID of item to be deleted
+        const confirmActionBtn = document.getElementById('confirmActionBtn');
+        const cancelActionBtn = document.getElementById('cancelActionBtn');
+        let pendingConfirmAction = null; // Stores the function to call on confirm
 
         // Toast Message Element
         const toastMessageElement = document.getElementById('toastMessage');
@@ -573,20 +573,26 @@
         /**
          * Shows the confirmation modal.
          * @param {string} message - The message to display in the modal.
-         * @param {function} onConfirm - Callback function to execute on confirmation.
-         * @param {string} itemId - The ID of the item related to the action (e.g., for deletion).
+         * @param {function} onConfirmCallback - Callback function to execute on confirmation.
+         * @param {string} confirmButtonText - Optional text for the confirm button.
          */
-        function showConfirmModal(message, onConfirm, itemId) {
+        function showConfirmModal(message, onConfirmCallback, confirmButtonText = 'تأكيد') {
             confirmModalText.textContent = message;
+            confirmActionBtn.textContent = confirmButtonText;
             confirmModalOverlay.classList.add('active');
-            expenseToDeleteId = itemId; // Store the ID for the delete action
+            pendingConfirmAction = onConfirmCallback; // Store the callback
 
             // Set up event listeners for modal buttons
-            confirmDeleteBtn.onclick = () => {
-                onConfirm(expenseToDeleteId); // Pass the item ID to the confirm function
+            confirmActionBtn.onclick = () => {
+                if (pendingConfirmAction) {
+                    pendingConfirmAction(true); // Pass true to confirm action
+                }
                 hideConfirmModal();
             };
-            cancelDeleteBtn.onclick = () => {
+            cancelActionBtn.onclick = () => {
+                if (pendingConfirmAction) {
+                    pendingConfirmAction(false); // Pass false to cancel action
+                }
                 hideConfirmModal();
             };
         }
@@ -596,9 +602,9 @@
          */
         function hideConfirmModal() {
             confirmModalOverlay.classList.remove('active');
-            confirmDeleteBtn.onclick = null; // Remove listeners to prevent memory leaks
-            cancelDeleteBtn.onclick = null;
-            expenseToDeleteId = null;
+            confirmActionBtn.onclick = null; // Remove listeners to prevent memory leaks
+            cancelActionBtn.onclick = null;
+            pendingConfirmAction = null;
         }
 
         /**
@@ -725,7 +731,11 @@
                 button.onclick = (event) => {
                     event.stopPropagation(); // Prevent expense-item click when delete button is clicked
                     const idToDelete = event.currentTarget.dataset.id;
-                    showConfirmModal(`هل أنت متأكد أنك تريد حذف "${expenses.find(e => e.id === idToDelete)?.name}"؟`, deleteExpense, idToDelete);
+                    showConfirmModal(`هل أنت متأكد أنك تريد حذف "${expenses.find(e => e.id === idToDelete)?.name}"؟`, (confirmed) => {
+                        if (confirmed) {
+                            deleteExpense(idToDelete);
+                        }
+                    }, 'نعم، احذف');
                 };
             });
 
@@ -1018,22 +1028,58 @@
             reader.onload = (e) => {
                 try {
                     const importedExpenses = JSON.parse(e.target.result);
-                    // Basic validation for imported data structure
-                    if (Array.isArray(importedExpenses) && importedExpenses.every(item => item.id && item.date && item.name && typeof item.price === 'number')) {
-                        // Option: Overwrite existing data or merge? For simplicity, we'll overwrite.
-                        showConfirmModal('هل أنت متأكد من استيراد البيانات؟ سيؤدي هذا إلى استبدال بياناتك الحالية.', (confirmed) => {
-                            if (confirmed) {
-                                expenses = importedExpenses;
-                                saveExpenses();
+                    
+                    if (!Array.isArray(importedExpenses)) {
+                        showToast('صيغة ملف الاستيراد غير صالحة. يجب أن يكون مصفوفة من المصاريف.', 3000);
+                        return;
+                    }
+
+                    showConfirmModal('هل أنت متأكد من استيراد البيانات؟ سيتم إضافة المصاريف الجديدة وتجاهل المكررة.', (confirmed) => {
+                        if (confirmed) {
+                            let newItemsAdded = 0;
+                            let duplicatesIgnored = 0;
+
+                            importedExpenses.forEach(importedExp => {
+                                // Basic validation for imported expense structure
+                                if (importedExp.date && importedExp.name && typeof importedExp.price === 'number' && importedExp.category) {
+                                    // Check if this imported expense already exists in our current data
+                                    const isDuplicate = expenses.some(existingExp =>
+                                        existingExp.date === importedExp.date &&
+                                        existingExp.name === importedExp.name &&
+                                        existingExp.price === importedExp.price &&
+                                        existingExp.category === importedExp.category
+                                    );
+
+                                    if (!isDuplicate) {
+                                        // Ensure unique ID for imported item to avoid future collisions
+                                        importedExp.id = generateUniqueId();
+                                        // Ensure timestamp is present for proper sorting
+                                        if (!importedExp.timestamp) {
+                                            importedExp.timestamp = new Date().toISOString();
+                                        }
+                                        expenses.push(importedExp);
+                                        newItemsAdded++;
+                                    } else {
+                                        duplicatesIgnored++;
+                                    }
+                                } else {
+                                    console.warn("Skipping invalid imported expense item:", importedExp);
+                                }
+                            });
+
+                            if (newItemsAdded > 0 || duplicatesIgnored > 0) {
+                                // Sort expenses after adding new ones
+                                expenses.sort((a, b) => new Date(a.timestamp || a.date) - new Date(b.timestamp || b.date));
+                                saveExpenses(); // Save updated expenses
                                 renderCurrentDateExpenses();
                                 renderDailySummaries();
                                 updateMonthlySummary();
-                                showToast('تم استيراد البيانات بنجاح!', 2000);
+                                showToast(`تم استيراد ${newItemsAdded} مصروف جديد. تم تجاهل ${duplicatesIgnored} مصروف مكرر.`, 5000);
+                            } else {
+                                showToast('لم يتم العثور على مصاريف جديدة للاستيراد.', 3000);
                             }
-                        }, null); // No specific item ID for import confirmation
-                    } else {
-                        showToast('صيغة ملف الاستيراد غير صالحة.', 3000);
-                    }
+                        }
+                    }, 'نعم، استورد');
                 } catch (error) {
                     console.error("Error parsing imported JSON:", error);
                     showToast('حدث خطأ أثناء قراءة ملف البيانات. تأكد أنه ملف JSON صحيح.', 3000);
@@ -1049,14 +1095,17 @@
         function clearAllData() {
             showConfirmModal('هل أنت متأكد من مسح جميع بياناتك؟ لا يمكن التراجع عن هذا الإجراء.', (confirmed) => {
                 if (confirmed) {
-                    expenses = [];
-                    saveExpenses(); // Clear local storage
-                    renderCurrentDateExpenses();
-                    renderDailySummaries();
-                    updateMonthlySummary();
+                    localStorage.removeItem(EXPENSES_STORAGE_KEY); // Directly clear from local storage
+                    expenses = []; // Reset array
+                    productMemory = {}; // Reset product memory
+                    renderCurrentDateExpenses(); // Re-render current date (empty)
+                    renderDailySummaries(); // Re-render all summaries (empty)
+                    updateQuickSuggestions(); // Clear quick suggestions
+                    updateMonthlySummary(); // Reset monthly summary
                     showToast('تم مسح جميع البيانات بنجاح!', 2000);
+                    cancelEdit(); // Exit any edit mode
                 }
-            }, null); // No specific item ID for clear all confirmation
+            }, 'نعم، امسح');
         }
 
 
@@ -1251,7 +1300,7 @@
                     showToast('تم مسح جميع البيانات بنجاح!', 2000);
                     cancelEdit(); // Exit any edit mode
                 }
-            }, null);
+            }, 'نعم، امسح');
         });
 
 
@@ -1285,3 +1334,4 @@
     </script>
 </body>
 </html>
+
