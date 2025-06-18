@@ -476,7 +476,7 @@
         </div>
     </div>
 
-    <!-- Confirmation Modal -->
+    <!-- Confirmation Modal (Unified) -->
     <div id="confirmModalOverlay" class="modal-overlay">
         <div class="modal-content">
             <h3 class="text-xl font-bold mb-4">تأكيد الإجراء</h3>
@@ -866,10 +866,28 @@
             const expenseDate = expenseDateInput.value; // Get selected date
             const suggestedCategory = categoryDisplay.textContent.replace('(تلقائي)', '').trim();
 
-            if (!productName || isNaN(productPrice) || productPrice <= 0 || !expenseDate) {
-                showToast('الرجاء إدخال اسم المنتج والسعر والتاريخ بشكل صحيح.', 3000);
+            // Basic input validation
+            if (!productName) {
+                showToast('الرجاء إدخال اسم المنتج.', 3000);
+                productNameInput.focus();
                 return;
             }
+            if (isNaN(productPrice) || productPrice <= 0) {
+                showToast('الرجاء إدخال سعر صحيح أكبر من صفر.', 3000);
+                productPriceInput.focus();
+                return;
+            }
+            if (!expenseDate) {
+                showToast('الرجاء اختيار التاريخ.', 3000);
+                expenseDateInput.focus();
+                return;
+            }
+            if (!suggestedCategory || suggestedCategory === '(تلقائي)') {
+                showToast('الفئة غير محددة. الرجاء إدخال اسم منتج واضح.', 3000);
+                productNameInput.focus();
+                return;
+            }
+
 
             if (isEditing) {
                 // Update existing expense
@@ -994,6 +1012,10 @@
          * Exports all expense data to a JSON file.
          */
         function exportData() {
+            if (expenses.length === 0) {
+                showToast('لا توجد بيانات لتصديرها.', 3000);
+                return;
+            }
             const dataStr = JSON.stringify(expenses, null, 2); // Pretty print JSON
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -1030,7 +1052,7 @@
                     const importedExpenses = JSON.parse(e.target.result);
                     
                     if (!Array.isArray(importedExpenses)) {
-                        showToast('صيغة ملف الاستيراد غير صالحة. يجب أن يكون مصفوفة من المصاريف.', 3000);
+                        showToast('صيغة ملف الاستيراد غير صالحة. يجب أن يكون مصفوفة من المصاريف.', 4000);
                         return;
                     }
 
@@ -1038,10 +1060,17 @@
                         if (confirmed) {
                             let newItemsAdded = 0;
                             let duplicatesIgnored = 0;
+                            let invalidItemsIgnored = 0;
 
                             importedExpenses.forEach(importedExp => {
                                 // Basic validation for imported expense structure
-                                if (importedExp.date && importedExp.name && typeof importedExp.price === 'number' && importedExp.category) {
+                                const isValid = importedExp &&
+                                                typeof importedExp.name === 'string' && importedExp.name.trim() !== '' &&
+                                                typeof importedExp.price === 'number' && !isNaN(importedExp.price) && importedExp.price > 0 &&
+                                                typeof importedExp.date === 'string' && importedExp.date.match(/^\d{4}-\d{2}-\d{2}$/) && // YYYY-MM-DD format
+                                                typeof importedExp.category === 'string' && importedExp.category.trim() !== '';
+
+                                if (isValid) {
                                     // Check if this imported expense already exists in our current data
                                     const isDuplicate = expenses.some(existingExp =>
                                         existingExp.date === importedExp.date &&
@@ -1051,11 +1080,11 @@
                                     );
 
                                     if (!isDuplicate) {
-                                        // Ensure unique ID for imported item to avoid future collisions
+                                        // Assign a new unique ID to avoid potential ID collisions from external sources
                                         importedExp.id = generateUniqueId();
                                         // Ensure timestamp is present for proper sorting
                                         if (!importedExp.timestamp) {
-                                            importedExp.timestamp = new Date().toISOString();
+                                            importedExp.timestamp = new Date().toISOString(); // Use current time if no timestamp
                                         }
                                         expenses.push(importedExp);
                                         newItemsAdded++;
@@ -1063,20 +1092,25 @@
                                         duplicatesIgnored++;
                                     }
                                 } else {
-                                    console.warn("Skipping invalid imported expense item:", importedExp);
+                                    invalidItemsIgnored++;
+                                    console.warn("Skipping invalid or malformed imported expense item:", importedExp);
                                 }
                             });
 
-                            if (newItemsAdded > 0 || duplicatesIgnored > 0) {
+                            if (newItemsAdded > 0 || duplicatesIgnored > 0 || invalidItemsIgnored > 0) {
                                 // Sort expenses after adding new ones
                                 expenses.sort((a, b) => new Date(a.timestamp || a.date) - new Date(b.timestamp || b.date));
-                                saveExpenses(); // Save updated expenses
+                                saveExpenses(); // Save updated expenses to local storage
                                 renderCurrentDateExpenses();
                                 renderDailySummaries();
                                 updateMonthlySummary();
-                                showToast(`تم استيراد ${newItemsAdded} مصروف جديد. تم تجاهل ${duplicatesIgnored} مصروف مكرر.`, 5000);
+                                
+                                let message = `تم استيراد ${newItemsAdded} مصروف جديد.`;
+                                if (duplicatesIgnored > 0) message += ` تم تجاهل ${duplicatesIgnored} مصروف مكرر.`;
+                                if (invalidItemsIgnored > 0) message += ` تم تجاهل ${invalidItemsIgnored} مصروف غير صالح.`;
+                                showToast(message, 6000); // Longer toast for more info
                             } else {
-                                showToast('لم يتم العثور على مصاريف جديدة للاستيراد.', 3000);
+                                showToast('لم يتم العثور على مصاريف جديدة أو صالحة للاستيراد.', 3000);
                             }
                         }
                     }, 'نعم، استورد');
@@ -1287,21 +1321,7 @@
         exportDataBtn.addEventListener('click', exportData);
         importDataBtn.addEventListener('click', importData);
         importFileInput.addEventListener('change', handleImportFile);
-        clearAllDataBtn.addEventListener('click', () => {
-            showConfirmModal('هل أنت متأكد من مسح جميع بياناتك؟ لا يمكن التراجع عن هذا الإجراء.', (confirmed) => {
-                if (confirmed) {
-                    localStorage.removeItem(EXPENSES_STORAGE_KEY); // Directly clear from local storage
-                    expenses = []; // Reset array
-                    productMemory = {}; // Reset product memory
-                    renderCurrentDateExpenses(); // Re-render current date (empty)
-                    renderDailySummaries(); // Re-render all summaries (empty)
-                    updateQuickSuggestions(); // Clear quick suggestions
-                    updateMonthlySummary(); // Reset monthly summary
-                    showToast('تم مسح جميع البيانات بنجاح!', 2000);
-                    cancelEdit(); // Exit any edit mode
-                }
-            }, 'نعم، امسح');
-        });
+        clearAllDataBtn.addEventListener('click', clearAllData); // Call clearAllData directly
 
 
         // --- PWA Service Worker Registration ---
@@ -1334,4 +1354,3 @@
     </script>
 </body>
 </html>
-
