@@ -29,7 +29,7 @@
         <!-- ======== Loading Screen ======== -->
         <div id="loading-screen" class="screen">
             <div class="spinner"></div>
-            <p>جاري التحميل...</p>
+            <p>جاري التحقق من حالة الدخول...</p>
         </div>
 
         <!-- ======== Auth Screen ======== -->
@@ -40,10 +40,16 @@
                 </div>
                 <h1>المصروفات الذكية</h1>
                 <p>تتبع نفقاتك بسهولة وأناقة.</p>
-                <button id="google-signin-btn" class="btn btn-primary">
-                    <i data-lucide="log-in"></i>
-                    <span>تسجيل الدخول بـ Google</span>
-                </button>
+                <div class="auth-buttons">
+                    <button id="google-signin-btn" class="btn btn-primary">
+                        <i data-lucide="log-in"></i>
+                        <span>تسجيل الدخول بـ Google</span>
+                    </button>
+                    <button id="anon-signin-btn" class="btn btn-secondary">
+                        <i data-lucide="user-x"></i>
+                        <span>التصفح كمجهول</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -144,4 +150,4 @@
         }
     </script>
 </body>
-</html>
+                                                                                               </html>
