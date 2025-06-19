@@ -75,7 +75,7 @@ const categoriesPage = document.getElementById('categoriesPage');
 const settingsPage = document.getElementById('settingsPage');
 
 const openAddExpenseModalBtn = document.getElementById('openAddExpenseModal');
-const expenseDateInput = document.getElementById('expenseDate');
+const expenseDateInput = document.getElementById('expenseDate'); // Still used for daily page date selection
 const addExpenseFAB = document.getElementById('addExpenseFAB');
 const currentDateExpenseList = document.getElementById('currentDateExpenseList');
 const selectedDateDisplay = document.getElementById('selectedDateDisplay');
@@ -274,11 +274,11 @@ function toggleLoading(show, message = 'جاري التحميل...') {
 function switchTab(tabName) {
     console.log("Switching tab to:", tabName); // Debugging line
     // Deactivate all tabs and hide all pages
-    const allTabs = [dailyTabBtn, monthlyTabBtn, categoriesTabBtn]; // Removed settingsBtn from here as it's not a main tab button
+    const allTabs = [dailyTabBtn, monthlyTabBtn, categoriesTabBtn];
     const allPages = [dailyPage, monthlyPage, categoriesPage, settingsPage];
 
     allTabs.forEach(btn => btn.classList.remove('active'));
-    allPages.forEach(page => page.classList.remove('active')); // Remove active class from all pages
+    allPages.forEach(page => page.classList.remove('active'));
 
     // Activate the selected tab and show its page
     switch (tabName) {
@@ -303,6 +303,8 @@ function switchTab(tabName) {
             renderUserCategories();
             break;
         case 'settings':
+            // Settings button doesn't get 'active' tab style, it's a separate entry point
+            // from header.
             settingsPage.classList.add('active');
             updateSettingsPage();
             break;
@@ -330,6 +332,7 @@ function renderCurrentDateExpenses() {
         dailyExpensesSkeleton.classList.add('hidden');
         emptyDailyState.classList.remove('hidden');
     } else {
+        dailyExpensesSkeleton.classList.add('hidden'); // Hide skeleton before rendering list
         expensesForDate.forEach(exp => {
             total += exp.price;
             // Determine category info (custom first, then default fallback)
@@ -356,7 +359,6 @@ function renderCurrentDateExpenses() {
             });
             currentDateExpenseList.appendChild(item);
         });
-        dailyExpensesSkeleton.classList.add('hidden');
         currentDateExpenseList.classList.remove('hidden');
     }
     currentDateTotalDisplay.textContent = formatCurrency(total);
@@ -404,7 +406,7 @@ function updateMonthlySummary() {
                 const li = document.createElement('li');
                 li.innerHTML = `
                     <span class="flex items-center">
-                        <span class="w-3 h-3 rounded-full mr-2" style="background-color: ${categoryColor};"></span>
+                        <span class="w-3 h-3 rounded-full ml-2" style="background-color: ${categoryColor};"></span>
                         ${categoryName}
                     </span>
                     <span class="font-semibold">${formatCurrency(total)}</span>
@@ -415,6 +417,12 @@ function updateMonthlySummary() {
 
     monthlySummarySkeleton.classList.add('hidden');
     monthlyContent.classList.remove('hidden');
+
+    monthlyTotalDisplay.textContent = formatCurrency(monthlyTotal);
+    dailyAverageDisplay.textContent = formatCurrency(dailyAverage);
+    daysRecordedDisplay.textContent = daysRecorded;
+
+    lucide.createIcons();
 }
 
 /**
@@ -429,7 +437,7 @@ function populateDaySelect() {
     let dayToSelect = currentDay;
 
     // Adjust day if it exceeds the new month's max days
-    if (currentDay > daysInMonth || isNaN(currentDay)) {
+    if (isNaN(currentDay) || currentDay === 0 || currentDay > daysInMonth) {
         dayToSelect = 1; // Default to 1st day if invalid or not set
     }
 
@@ -443,6 +451,14 @@ function populateDaySelect() {
         }
         modalDaySelect.appendChild(option);
     }
+
+    // Scroll to the selected option for smooth spinner effect
+    setTimeout(() => {
+        const selectedOption = modalDaySelect.querySelector(`option[value="${dayToSelect}"]`);
+        if (selectedOption) {
+            modalDaySelect.scrollTop = selectedOption.offsetTop - (modalDaySelect.clientHeight / 2) + (selectedOption.clientHeight / 2);
+        }
+    }, 0); // Small delay to ensure rendering before scroll
 }
 
 /**
@@ -466,6 +482,14 @@ function populateMonthSelect() {
         }
         modalMonthSelect.appendChild(option);
     });
+
+    // Scroll to the selected option for smooth spinner effect
+    setTimeout(() => {
+        const selectedOption = modalMonthSelect.querySelector(`option[value="${monthToSelect}"]`);
+        if (selectedOption) {
+            modalMonthSelect.scrollTop = selectedOption.offsetTop - (modalMonthSelect.clientHeight / 2) + (selectedOption.clientHeight / 2);
+        }
+    }, 0);
 }
 
 /**
@@ -492,6 +516,14 @@ function populateYearSelect() {
         }
         modalYearSelect.appendChild(option);
     }
+
+    // Scroll to the selected option for smooth spinner effect
+    setTimeout(() => {
+        const selectedOption = modalYearSelect.querySelector(`option[value="${yearToSelect}"]`);
+        if (selectedOption) {
+            modalYearSelect.scrollTop = selectedOption.offsetTop - (modalYearSelect.clientHeight / 2) + (selectedOption.clientHeight / 2);
+        }
+    }, 0);
 }
 
 /**
@@ -499,17 +531,15 @@ function populateYearSelect() {
  * @param {Date} dateToSet Optional Date object to pre-select the wheels.
  */
 function initializeDateWheels(dateToSet = new Date()) {
-    // Populate dropdowns first
-    populateYearSelect();
-    populateMonthSelect();
-    populateDaySelect(); // This populates days based on initially selected month/year
-
-    // Now set the actual values based on dateToSet
+    // Set initial values for select elements directly to ensure correct population
     modalYearSelect.value = dateToSet.getFullYear();
     modalMonthSelect.value = dateToSet.getMonth();
-    // After changing month/year, days might need adjustment, so call populateDaySelect again
-    populateDaySelect();
     modalDaySelect.value = dateToSet.getDate();
+
+    // Populate dropdowns first based on initial values
+    populateYearSelect();
+    populateMonthSelect();
+    populateDaySelect();
 
     // Add event listeners to update days when month or year changes
     // Remove listeners first to prevent duplicates
@@ -854,6 +884,7 @@ function renderUserCategories() {
         categoriesSkeleton.classList.add('hidden');
         emptyCategoriesState.classList.remove('hidden');
     } else {
+        categoriesSkeleton.classList.add('hidden'); // Hide skeleton before rendering list
         categoriesArray.forEach(cat => {
             const item = document.createElement('div');
             item.className = 'category-item';
@@ -881,7 +912,6 @@ function renderUserCategories() {
             });
             userCategoriesList.appendChild(item);
         });
-        categoriesSkeleton.classList.add('hidden');
         userCategoriesList.classList.remove('hidden');
     }
     lucide.createIcons();
@@ -892,10 +922,14 @@ function renderUserCategories() {
  */
 async function addOrUpdateCategory() {
     const name = categoryNameInput.value.trim();
-    const color = categoryColorInput.value;
+    let color = categoryColorInput.value;
     if (!name) {
         showToast("الرجاء إدخال اسم الفئة.");
         return;
+    }
+
+    if (color === '#000000') { // If user didn't pick a color (still black default)
+        color = getRandomCategoryColor();
     }
 
     toggleLoading(true, appState.isEditingCategory ? 'جاري تحديث الفئة...' : 'جاري إضافة الفئة...');
@@ -914,7 +948,7 @@ async function addOrUpdateCategory() {
 
             await addDoc(categoriesCollectionRef, {
                 name: name,
-                color: color || getRandomCategoryColor(),
+                color: color,
                 timestamp: new Date().getTime()
             });
             showToast("تمت إضافة الفئة بنجاح.");
@@ -940,6 +974,7 @@ function editCategory(id) {
         categoryNameInput.value = category.name;
         categoryColorInput.value = category.color;
         addCategoryBtn.innerHTML = `<i data-lucide="edit" class="inline-block align-middle ml-2"></i> تحديث`;
+        addCategoryBtn.classList.add('primary-button'); // Ensure primary button style
         cancelCategoryEditBtn.classList.remove('hidden');
         lucide.createIcons();
     }
@@ -954,6 +989,7 @@ function cancelCategoryEdit() {
     categoryNameInput.value = '';
     categoryColorInput.value = '#000000'; // Reset color picker to black
     addCategoryBtn.innerHTML = `<i data-lucide="plus" class="inline-block align-middle ml-2"></i> إضافة فئة`;
+    addCategoryBtn.classList.add('primary-button'); // Ensure primary button style
     cancelCategoryEditBtn.classList.add('hidden');
     lucide.createIcons();
 }
@@ -1095,7 +1131,7 @@ async function generateSpendingAnalysis() {
 
     try {
         const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
-        const apiKey = "";
+        const apiKey = ""; // You must replace this with a real Gemini API key
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
         const response = await fetch(apiUrl, {
@@ -1150,6 +1186,7 @@ function setupFirestoreListeners(uid) {
         if (appState.currentTab === 'monthly') {
             updateMonthlySummary();
         }
+        // Re-render category buttons in modal if it's open, to reflect any changes
         if (!expenseModal.classList.contains('hidden')) {
             renderCategoryButtons(appState.selectedCategoryIdForExpense);
         }
@@ -1166,6 +1203,7 @@ function setupFirestoreListeners(uid) {
         if (appState.currentTab === 'categories') {
             renderUserCategories();
         }
+        // Re-render category buttons in modal if it's open, to reflect any changes
         if (!expenseModal.classList.contains('hidden')) {
             renderCategoryButtons(appState.selectedCategoryIdForExpense);
         }
@@ -1206,9 +1244,9 @@ function resetAppUi() {
     appScreen.classList.add('hidden');
     authScreen.classList.remove('hidden');
     toggleLoading(false);
-    renderCurrentDateExpenses();
-    updateMonthlySummary();
-    renderUserCategories();
+    renderCurrentDateExpenses(); // Clear displayed expenses
+    updateMonthlySummary(); // Clear monthly summary
+    renderUserCategories(); // Clear categories
 }
 
 // --- Event Listeners and Initial Setup ---
@@ -1256,7 +1294,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     applyDarkModePreference();
 
-    expenseDateInput.value = getDateStringFromWheels(new Date().getDate(), new Date().getMonth(), new Date().getFullYear());
+    // Set initial date for the daily view's date input
+    const today = new Date();
+    expenseDateInput.value = getDateStringFromWheels(today.getDate(), today.getMonth(), today.getFullYear());
 
     signInBtn.addEventListener('click', async () => {
         toggleLoading(true, 'جاري تسجيل الدخول...');
@@ -1324,4 +1364,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 });
-
