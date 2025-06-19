@@ -586,3 +586,69 @@ body.dark-mode .category-list li {
     outline: none;
 }
 
+/* NEW: Category Buttons/Labels */
+.category-button {
+    padding: 0.6rem 1.2rem;
+    border-radius: 1.5rem; /* More rounded */
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent; /* For selected state */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 80px; /* Ensure a minimum size */
+    flex-grow: 1; /* Allow them to grow within flex container */
+    flex-basis: auto; /* Allow wrap */
+    max-width: 48%; /* Two columns roughly */
+}
+
+.category-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.category-button.selected {
+    border-color: #4f46e5; /* Primary color border when selected */
+    transform: scale(1.02); /* Slight zoom effect */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-mode .category-button.selected {
+    border-color: #6366f1; /* Dark mode primary color border */
+}
+
+/* For the color input to look good */
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 0.75rem; /* Match other inputs */
+}
+input[type="color"]::-moz-color-swatch-wrapper {
+    padding: 0;
+}
+input[type="color"]::-moz-color-swatch {
+    border: none;
+    border-radius: 0.75rem;
+}
+
+/* Date Picker Wheels Styling */
+.date-picker-wheels select {
+    appearance: none; /* Remove default arrow */
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>');
+    background-repeat: no-repeat;
+    background-position: left 0.75rem center; /* Position arrow on the left for RTL */
+    background-size: 1.25em auto; /* Size of arrow */
+    padding-left: 2.5rem; /* Space for the arrow */
+    text-align: right; /* Text remains right-aligned */
+    cursor: pointer;
+}
+
+body.dark-mode .date-picker-wheels select {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23e2e8f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>'); /* White arrow for dark mode */
+}
+
