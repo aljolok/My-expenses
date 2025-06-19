@@ -4,40 +4,144 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المصروفات الذكية</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- PWA & SEO -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" id="theme-color-meta" content="#ffffff">
+    <meta name="description" content="تطبيق ذكي لإدارة مصروفاتك اليومية بسهولة وفعالية.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons Library -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-    <div id="app">
-        <!-- شاشة التحميل -->
-        <div id="loading-screen">
+
+    <!-- ======== App Container ======== -->
+    <div id="app-container">
+
+        <!-- ======== Loading Screen ======== -->
+        <div id="loading-screen" class="screen">
             <div class="spinner"></div>
             <p>جاري التحميل...</p>
         </div>
 
-        <!-- شاشة التسجيل -->
-        <div id="auth-screen" class="hidden">
-            <button id="google-login">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                </svg>
-                تسجيل الدخول بـ Google
-            </button>
+        <!-- ======== Auth Screen ======== -->
+        <div id="auth-screen" class="screen hidden">
+            <div class="auth-card">
+                <div class="logo">
+                    <i data-lucide="wallet"></i>
+                </div>
+                <h1>المصروفات الذكية</h1>
+                <p>تتبع نفقاتك بسهولة وأناقة.</p>
+                <button id="google-signin-btn" class="btn btn-primary">
+                    <i data-lucide="log-in"></i>
+                    <span>تسجيل الدخول بـ Google</span>
+                </button>
+            </div>
         </div>
 
-        <!-- التطبيق الرئيسي -->
-        <div id="main-app" class="hidden">
-            <!-- محتوى التطبيق هنا -->
+        <!-- ======== Main App Screen ======== -->
+        <div id="main-app" class="screen hidden">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="user-profile">
+                    <img id="user-avatar" alt="User Avatar"> <!-- src will be set by JS -->
+                    <div>
+                        <h2 id="user-name">مرحباً</h2>
+                        <p id="user-email">أهلاً بك</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button id="theme-toggle-btn" class="btn-icon"><i data-lucide="sun"></i></button>
+                    <button id="logout-btn" class="btn-icon"><i data-lucide="log-out"></i></button>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main id="main-content">
+                <!-- Pages will be rendered here by JS -->
+            </main>
+
+            <!-- Navigation Bar -->
+            <nav class="app-nav">
+                <button class="nav-btn active" data-page="daily"><i data-lucide="calendar-day"></i><span>يومي</span></button>
+                <button class="nav-btn" data-page="monthly"><i data-lucide="bar-chart-3"></i><span>شهري</span></button>
+                <button id="fab-add-expense" class="nav-fab"><i data-lucide="plus"></i></button>
+                <button class="nav-btn" data-page="categories"><i data-lucide="tags"></i><span>فئات</span></button>
+                <button class="nav-btn" data-page="settings"><i data-lucide="settings"></i><span>إعدادات</span></button>
+            </nav>
         </div>
     </div>
 
+    <!-- ======== Modals ======== -->
+    <div id="modal-backdrop" class="hidden">
+        <!-- Expense Modal -->
+        <div id="expense-modal" class="modal hidden">
+            <h3 id="expense-modal-title">إضافة مصروف</h3>
+            <div class="form-group">
+                <label for="expense-name">اسم المصروف</label>
+                <input type="text" id="expense-name" placeholder="مثال: قهوة صباحية">
+            </div>
+            <div class="form-group">
+                <label for="expense-amount">المبلغ</label>
+                <input type="number" id="expense-amount" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label for="expense-category">الفئة</label>
+                <select id="expense-category"></select>
+            </div>
+            <div class="modal-actions">
+                <button id="save-expense-btn" class="btn btn-primary">حفظ</button>
+                <button id="cancel-expense-btn" class="btn btn-secondary">إلغاء</button>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirm-modal" class="modal hidden">
+             <h3 id="confirm-title">تأكيد</h3>
+             <p id="confirm-message">هل أنت متأكد؟</p>
+             <div class="modal-actions">
+                 <button id="confirm-yes-btn" class="btn btn-danger">نعم</button>
+                 <button id="confirm-no-btn" class="btn btn-secondary">لا</button>
+             </div>
+        </div>
+    </div>
+    
+    <!-- ======== Toast Notification ======== -->
+    <div id="toast" class="hidden">
+        <i id="toast-icon" data-lucide="check-circle"></i>
+        <p id="toast-message"></p>
+    </div>
+
+    <!-- ======== Offline Indicator ======== -->
+    <div id="offline-indicator" class="hidden">
+        <i data-lucide="wifi-off"></i>
+        <span>أنت غير متصل بالإنترنت</span>
+    </div>
+
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="app.js"></script>
+
+    <!-- App Script -->
+    <script defer type="module" src="./app.js"></script>
     <script>
-        lucide.createIcons();
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service worker registered.', reg))
+                    .catch(err => console.error('Service worker registration failed:', err));
+            });
+        }
     </script>
 </body>
 </html>
