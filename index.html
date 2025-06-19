@@ -24,7 +24,6 @@
         #main-content { flex-grow: 1; width: 100%; overflow-y: auto; padding: var(--space-md); }
         .app-nav { display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; width: 100%; background-color: var(--c-bg-primary); border-top: 1px solid var(--c-border); z-index: 10; box-shadow: 0 -5px 15px -3px rgba(0,0,0,0.05); flex-shrink: 0; }
         .btn, .btn-icon, .nav-btn { border: none; cursor: pointer; font-family: inherit; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); transition: var(--transition); border-radius: var(--radius-md); }
-        .btn { padding: var(--space-sm) var(--space-md); }
         .btn-primary { background: var(--grad-primary); color: var(--c-white); box-shadow: var(--shadow-md); }
         .btn-secondary { background-color: var(--c-secondary); color: var(--c-text-primary); }
         .btn-icon { background: transparent; padding: var(--space-sm); border-radius: var(--radius-full); }
@@ -64,9 +63,8 @@
     <div id="app-container">
         <!-- App content will be rendered here by JavaScript -->
     </div>
-    <div id="modal-container">
-        <!-- Modals will be rendered here -->
-    </div>
+    <div id="modal-container"></div>
+    <div id="toast-container"></div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -74,240 +72,177 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- CORE APP LOGIC ---
+            const appContainer = document.getElementById('app-container');
+            const modalContainer = document.getElementById('modal-container');
+            let app, auth, db;
 
-            const DOMElements = {
-                appContainer: document.getElementById('app-container'),
-                modalContainer: document.getElementById('modal-container'),
-            };
-
-            let app, auth, db; // Will be initialized after firebase loads
-
-            const state = {
-                user: null, expenses: [], categories: [], currentPage: 'daily', isEditing: null,
-                listeners: [],
-                addChangeListener(listener) { this.listeners.push(listener); },
-                notify() { this.listeners.forEach(listener => listener(this)); },
-                setState(newState) { Object.assign(this, newState); this.notify(); },
-            };
-
-            const ui = {
-                render() {
-                    if (!state.user) {
-                        DOMElements.appContainer.innerHTML = this.createAuthScreen();
-                    } else {
-                        DOMElements.appContainer.innerHTML = this.createMainAppShell(state);
-                        this.renderPageContent(state);
-                    }
-                    lucide.createIcons();
-                },
-                createAuthScreen() {
-                    return `<div class="screen active" id="auth-screen">
-                                <div class="auth-card">
-                                    <div class="logo"><i data-lucide="wallet"></i></div>
-                                    <h1>المصروفات الذكية</h1>
-                                    <p>تتبع نفقاتك بسهولة وأناقة.</p>
-                                    <div class="auth-buttons">
-                                        <button id="google-signin-btn" class="btn btn-primary"><i data-lucide="log-in"></i><span>تسجيل الدخول بـ Google</span></button>
-                                        <button id="anon-signin-btn" class="btn btn-secondary"><i data-lucide="user-x"></i><span>التصفح كمجهول</span></button>
-                                    </div>
-                                </div>
-                            </div>`;
-                },
-                createMainAppShell({ user, currentPage }) {
-                    const defaultAvatar = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xOCAyMHYtMWMwLTIuMi0xLjgtNC00LTRoLTRjLTIuMiAwLTQgMS44LTQgNHYxIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSI3IiByPSI0Ii8+PC9zdmc+";
-                    return `<div class="screen active" id="main-app">
-                                <header class="app-header">
-                                    <div class="user-profile">
-                                        <img id="user-avatar" src="${user.photoURL || defaultAvatar}">
-                                        <div id="user-info"><h2>${user.isAnonymous ? 'مستخدم مجهول' : (user.displayName || 'مستخدم جديد')}</h2></div>
-                                    </div>
-                                    <div class="header-actions"><button id="theme-toggle-btn" class="btn-icon"><i data-lucide="${localStorage.getItem('theme') === 'dark' ? 'sun' : 'moon'}"></i></button></div>
-                                </header>
-                                <main id="main-content"></main>
-                                <nav class="app-nav">
-                                    <button class="nav-btn ${currentPage === 'daily' ? 'active' : ''}" data-page="daily"><i data-lucide="calendar-day"></i><span>يومي</span></button>
-                                    <button class="nav-btn ${currentPage === 'monthly' ? 'active' : ''}" data-page="monthly"><i data-lucide="bar-chart-3"></i><span>شهري</span></button>
-                                    <button id="fab-add-expense" class="nav-fab"><i data-lucide="plus"></i></button>
-                                    <button class="nav-btn ${currentPage === 'categories' ? 'active' : ''}" data-page="categories"><i data-lucide="tags"></i><span>فئات</span></button>
-                                    <button id="logout-btn" class="nav-btn"><i data-lucide="log-out"></i><span>خروج</span></button>
-                                </nav>
-                            </div>`;
-                },
-                renderPageContent(appState) {
-                    const mainContent = document.getElementById('main-content');
-                    if (!mainContent) return;
-                    mainContent.innerHTML = '';
-                    let pageContent;
-                    switch (appState.currentPage) {
-                        case 'daily': pageContent = this.createDailyPage(appState); break;
-                        case 'monthly': pageContent = this.createMonthlyPage(appState); break;
-                        case 'categories': pageContent = this.createCategoriesPage(appState); break;
-                        default: pageContent = document.createElement('div');
-                    }
-                    mainContent.appendChild(pageContent);
-                    lucide.createIcons();
-                },
-                createDailyPage({ expenses, categories }) {
-                    const page = document.createElement('div'); page.className = 'page';
-                    const today = new Date().toISOString().slice(0, 10);
-                    const dailyExpenses = expenses.filter(e => e.date === today);
-                    const total = dailyExpenses.reduce((sum, e) => sum + e.amount, 0);
-                    page.innerHTML = `<div class="card"><h3><i data-lucide="sun"></i>مصروفات اليوم</h3><p class="amount">${utils.formatCurrency(total)}</p></div><div class="item-list"></div>`;
-                    const list = page.querySelector('.item-list');
-                    if (dailyExpenses.length > 0) { dailyExpenses.forEach(exp => list.insertAdjacentHTML('beforeend', this.getExpenseItemHTML(exp, categories))); } 
-                    else { list.innerHTML = `<p class="empty-state">لا توجد مصروفات مسجلة اليوم.</p>`; }
-                    return page;
-                },
-                createMonthlyPage({ expenses, categories }) {
-                    const page = document.createElement('div'); page.className = 'page';
-                    const now = new Date();
-                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                    const monthlyExpenses = expenses.filter(e => new Date(e.date) >= startOfMonth);
-                    const total = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
-                    const categoryTotals = {};
-                    monthlyExpenses.forEach(exp => { categoryTotals[exp.categoryId] = (categoryTotals[exp.categoryId] || 0) + exp.amount; });
-                    const sortedCategories = Object.entries(categoryTotals).sort(([, a], [, b]) => b - a);
-
-                    page.innerHTML = `<div class="card"><h3><i data-lucide="calendar-month"></i>ملخص الشهر</h3><p class="amount">${utils.formatCurrency(total)}</p></div><div class="card"><h3><i data-lucide="pie-chart"></i>الأعلى إنفاقًا</h3><div class="item-list"></div></div>`;
-                    const catList = page.querySelector('.item-list');
-                    if (sortedCategories.length > 0) {
-                        sortedCategories.forEach(([catId, catTotal]) => {
-                            const category = categories.find(c => c.id === catId);
-                            if (!category) return;
-                            const percentage = total > 0 ? (catTotal / total) * 100 : 0;
-                            catList.insertAdjacentHTML('beforeend', `<div class="category-summary-item" style="display:flex; align-items:center; gap: var(--space-md);"><span style="width: 80px; text-align: right;">${category.name}</span><div class="progress-bar" style="flex-grow:1; height:8px; background-color:var(--c-secondary); border-radius:99px;"><div class="progress-fill" style="width:${percentage}%; background-color:${category.color}; height:100%; border-radius:99px;"></div></div><span>${utils.formatCurrency(catTotal)}</span></div>`);
-                        });
-                    } else { catList.innerHTML = `<p class="empty-state">لا توجد بيانات لهذا الشهر.</p>`; }
-                    return page;
-                },
-                createCategoriesPage({ categories }) {
-                    const page = document.createElement('div'); page.className = 'page';
-                    page.innerHTML = `<div class="card"><h3><i data-lucide="tags"></i>إدارة الفئات</h3><div class="form-group"><label>اسم الفئة</label><input type="text" id="new-category-name" placeholder="مثال: تعليم"></div><div class="form-group"><label>اللون</label><input type="color" id="new-category-color" value="#8b5cf6"></div><button id="add-category-btn" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">إضافة فئة</button></div><div class="item-list"></div>`;
-                    const list = page.querySelector('.item-list');
-                    if (categories.length > 0) { categories.forEach(cat => list.insertAdjacentHTML('beforeend', this.getCategoryItemHTML(cat))); }
-                    else { list.innerHTML = `<p class="empty-state">لا توجد فئات مخصصة.</p>`; }
-                    return page;
-                },
-                getExpenseItemHTML(expense, categories) {
-                    const category = categories.find(c => c.id === expense.categoryId) || { name: 'غير محدد', color: '#9ca3af', icon: 'help-circle' };
-                    return `<div class="expense-item" data-id="${expense.id}"><div class="item-icon" style="background-color: ${category.color};"><i data-lucide="${category.icon || 'tag'}"></i></div><div class="item-details"><p class="item-name">${utils.escapeHTML(expense.name)}</p><p class="item-category">${utils.escapeHTML(category.name)}</p></div><p class="item-amount">${utils.formatCurrency(expense.amount)}</p><div class="item-actions"><button class="btn-icon delete-expense"><i data-lucide="trash-2"></i></button></div></div>`;
-                },
-                getCategoryItemHTML(category) {
-                    return `<div class="category-item" data-id="${category.id}"><div class="item-icon" style="background-color: ${category.color};"><i data-lucide="${category.icon || 'tag'}"></i></div><div class="item-details"><p class="item-name">${utils.escapeHTML(category.name)}</p></div><div class="item-actions"><button class="btn-icon delete-category"><i data-lucide="trash-2"></i></button></div></div>`;
-                },
-                toggleModal(show, content) {
-                    const modalContainer = DOMElements.modalContainer;
-                    if (show) {
-                        modalContainer.innerHTML = `<div class="modal-backdrop active"><div class="modal">${content}</div></div>`;
-                        lucide.createIcons();
-                    } else {
-                        modalContainer.innerHTML = '';
-                    }
-                },
-                showExpenseModal(expense, categories) {
-                    const categoryOptions = categories.map(c => `<option value="${c.id}" ${expense && expense.categoryId === c.id ? 'selected' : ''}>${utils.escapeHTML(c.name)}</option>`).join('');
-                    const content = `<h3>${expense ? 'تعديل المصروف' : 'إضافة مصروف'}</h3><div class="form-group"><label>اسم المصروف</label><input type="text" id="expense-name" value="${expense ? utils.escapeHTML(expense.name) : ''}"></div><div class="form-group"><label>المبلغ</label><input type="number" id="expense-amount" value="${expense ? expense.amount : ''}"></div><div class="form-group"><label>الفئة</label><select id="expense-category">${categoryOptions}</select></div><div class="modal-actions"><button id="save-expense-btn" class="btn btn-primary">حفظ</button><button class="btn btn-secondary modal-cancel">إلغاء</button></div>`;
-                    state.isEditing = expense ? { id: expense.id } : null;
-                    this.toggleModal(true, content);
-                },
-                showConfirmation(title, message, onConfirm) {
-                    const content = `<h3>${title}</h3><p>${message}</p><div class="modal-actions"><button id="confirm-yes-btn" class="btn btn-danger">نعم</button><button class="btn btn-secondary modal-cancel">لا</button></div>`;
-                    this.toggleModal(true, content);
-                    document.getElementById('confirm-yes-btn').addEventListener('click', () => { onConfirm(); this.toggleModal(false); });
-                },
-                showToast(message, type = 'success') { /* ... unchanged ... */},
-                handleTheme(isDark) { document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light'); const themeBtn = document.getElementById('theme-toggle-btn'); if (themeBtn) { themeBtn.innerHTML = `<i data-lucide="${isDark ? 'sun' : 'moon'}"></i>`; lucide.createIcons(); } }
-            };
-
-            const api = {
-                expensesCol: (uid) => db.collection('users').doc(uid).collection('expenses'),
-                categoriesCol: (uid) => db.collection('users').doc(uid).collection('categories'),
-                addExpense: (uid, data) => api.expensesCol(uid).add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp(), date: new Date().toISOString().slice(0, 10) }),
-                updateExpense: (uid, id, data) => api.expensesCol(uid).doc(id).update(data),
-                deleteExpense: (uid, id) => api.expensesCol(uid).doc(id).delete(),
-                addCategory: (uid, data) => api.categoriesCol(uid).add(data),
-                deleteCategory: (uid, id) => api.categoriesCol(uid).doc(id).delete(),
-                ensureDefaultCategories: async (uid, cats) => { if (cats.length > 0) return; for (const cat of [{ name: 'طعام', color: '#ef4444', icon: 'utensils' }, { name: 'مواصلات', color: '#3b82f6', icon: 'car' }, { name: 'فواتير', color: '#f97316', icon: 'receipt' }, { name: 'تسوق', color: '#10b981', icon: 'shopping-bag' }]) { await api.addCategory(uid, cat); } }
-            };
-
-            const logic = {
-                init() {
-                    const loadingScreen = document.createElement('div');
-                    loadingScreen.className = 'screen active';
-                    loadingScreen.innerHTML = `<div class="spinner"></div><p>جاري التحقق...</p>`;
-                    DOMElements.appContainer.appendChild(loadingScreen);
-
-                    const timeout = setTimeout(() => { loadingScreen.innerHTML = `<p>فشل الاتصال. الرجاء تحديث الصفحة.</p>`; }, 10000);
-
-                    try {
-                        app = firebase.initializeApp(firebaseConfig);
-                        auth = firebase.auth();
-                        db = firebase.firestore();
-
-                        auth.onAuthStateChanged(user => {
-                            clearTimeout(timeout);
-                            state.cleanupListeners();
-                            if (user) {
-                                state.user = user;
-                                const unsubExpenses = api.expensesCol(user.uid).orderBy('createdAt', 'desc').onSnapshot(snap => state.setState({ expenses: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
-                                const unsubCategories = api.categoriesCol(user.uid).onSnapshot(snap => { const cats = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); api.ensureDefaultCategories(user.uid, cats); state.setState({ categories: cats }); });
-                                state.unsubscribe.push(unsubExpenses, unsubCategories);
-                            } else {
-                                state.setState({ user: null, expenses: [], categories: [] });
-                            }
-                        });
-                        
-                        state.addChangeListener(ui.render.bind(ui));
-                        this.setupGlobalEventListeners();
-
-                    } catch (e) { clearTimeout(timeout); loadingScreen.innerHTML = `<p>حدث خطأ فادح أثناء التشغيل.</p>`; console.error(e); }
-                },
-                setupGlobalEventListeners() {
-                    DOMElements.appContainer.addEventListener('click', e => {
-                        const target = e.target.closest('button');
-                        if (!target) return;
-
-                        const id = target.parentElement.parentElement.dataset.id;
-                        
-                        if (target.id === 'google-signin-btn') auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-                        else if (target.id === 'anon-signin-btn') auth.signInAnonymously();
-                        else if (target.id === 'logout-btn') auth.signOut();
-                        else if (target.dataset.page) state.setState({ currentPage: target.dataset.page });
-                        else if (target.id === 'fab-add-expense') ui.showExpenseModal(null, state.categories);
-                        else if (target.classList.contains('delete-expense')) ui.showConfirmation('حذف المصروف', 'هل أنت متأكد؟', () => api.deleteExpense(state.user.uid, id));
-                        else if (target.id === 'add-category-btn') this.handleAddCategory();
-                        else if (target.classList.contains('delete-category')) ui.showConfirmation('حذف الفئة', 'هل أنت متأكد؟', () => api.deleteCategory(state.user.uid, id));
-                        else if (target.id === 'theme-toggle-btn') { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; localStorage.setItem('theme', !isDark ? 'dark' : 'light'); ui.handleTheme(!isDark); }
-                    });
-                    DOMElements.modalContainer.addEventListener('click', e => {
-                        if (e.target.closest('.modal-cancel')) ui.toggleModal(false);
-                        else if (e.target.id === 'save-expense-btn') this.handleSaveExpense();
-                    });
-                },
-                handleSaveExpense: async () => {
-                    const modal = document.getElementById('expense-modal');
-                    const name = modal.querySelector('#expense-name').value.trim();
-                    const amount = parseFloat(modal.querySelector('#expense-amount').value);
-                    const categoryId = modal.querySelector('#expense-category').value;
-                    if (!name || isNaN(amount) || !categoryId) return alert("يرجى ملء جميع الحقول");
-                    const data = { name, amount, categoryId };
-                    const action = state.isEditing ? api.updateExpense(state.user.uid, state.isEditing.id, data) : api.addExpense(state.user.uid, data);
-                    try { await action; ui.toggleModal(false); } catch (e) { alert("حدث خطأ"); }
-                },
-                handleAddCategory: async () => {
-                    const nameInput = document.getElementById('new-category-name');
-                    const colorInput = document.getElementById('new-category-color');
-                    const name = nameInput.value.trim();
-                    if (!name) return alert('اسم الفئة مطلوب');
-                    await api.addCategory(state.user.uid, { name, color: colorInput.value, icon: 'tag' });
-                    nameInput.value = '';
-                },
-            };
+            const state = { user: null, expenses: [], categories: [], currentPage: 'daily', isEditing: null, unsubscribe: [] };
             
-            const utils = { formatCurrency: (amount) => new Intl.NumberFormat('ar-AE', { style: 'currency', currency: 'AED' }).format(amount || 0), escapeHTML: (str) => str.replace(/[&<>'"]/g, tag => ({'&':'&','<':'<','>':'>',"'":''','"':'"'}[tag]||tag)) };
+            const firebaseConfig = { apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ", authDomain: "my-expenses-81714.firebaseapp.com", projectId: "my-expenses-81714", storageBucket: "my-expenses-81714.firebasestorage.app", messagingSenderId: "672207051964", appId: "1:672207051964:web:b6e0cedc143bd06fd584b9" };
 
-            logic.init();
+            function render() {
+                appContainer.innerHTML = '';
+                if (state.user) {
+                    const mainAppNode = new DOMParser().parseFromString(createMainAppShell(state), 'text/html').body.firstChild;
+                    renderPageContent(mainAppNode, state);
+                    appContainer.appendChild(mainAppNode);
+                } else {
+                    appContainer.innerHTML = createAuthScreen();
+                }
+                lucide.createIcons();
+                setupEventListeners();
+            }
+
+            function setState(newState) {
+                Object.assign(state, newState);
+                render();
+            }
+            
+            function createAuthScreen() {
+                return `<div class="screen active" id="auth-screen"><div class="auth-card"><div class="logo"><i data-lucide="wallet"></i></div><h1>المصروفات الذكية</h1><p>تتبع نفقاتك بسهولة وأناقة.</p><div class="auth-buttons"><button id="google-signin-btn" class="btn btn-primary"><i data-lucide="log-in"></i><span>تسجيل الدخول بـ Google</span></button><button id="anon-signin-btn" class="btn btn-secondary"><i data-lucide="user-x"></i><span>التصفح كمجهول</span></button></div></div></div>`;
+            }
+
+            function createMainAppShell({ user, currentPage }) {
+                const defaultAvatar = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xOCAyMHYtMWMwLTIuMi0xLjgtNC00LTRoLTRjLTIuMiAwLTQgMS44LTQgNHYxIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSI3IiByPSI0Ii8+PC9zdmc+";
+                return `<div class="screen active" id="main-app"><header class="app-header"><div class="user-profile"><img src="${user.photoURL || defaultAvatar}"><div><h2>${user.isAnonymous ? 'مستخدم مجهول' : (user.displayName || 'مستخدم جديد')}</h2></div></div></header><main id="main-content"></main><nav class="app-nav"><button class="nav-btn ${currentPage === 'daily' ? 'active' : ''}" data-page="daily"><i data-lucide="calendar-day"></i><span>يومي</span></button><button class="nav-btn ${currentPage === 'monthly' ? 'active' : ''}" data-page="monthly"><i data-lucide="bar-chart-3"></i><span>شهري</span></button><button id="fab-add-expense" class="nav-fab"><i data-lucide="plus"></i></button><button class="nav-btn ${currentPage === 'categories' ? 'active' : ''}" data-page="categories"><i data-lucide="tags"></i><span>فئات</span></button><button id="logout-btn" class="nav-btn"><i data-lucide="log-out"></i><span>خروج</span></button></nav></div>`;
+            }
+
+            function renderPageContent(containerNode, appState) {
+                const mainContent = containerNode.querySelector('#main-content');
+                let pageHTML = '';
+                switch (appState.currentPage) {
+                    case 'daily': pageHTML = createDailyPage(appState); break;
+                    case 'monthly': pageHTML = createMonthlyPage(appState); break;
+                    case 'categories': pageHTML = createCategoriesPage(appState); break;
+                }
+                mainContent.innerHTML = pageHTML;
+            }
+
+            function createDailyPage({ expenses, categories }) {
+                const today = new Date().toISOString().slice(0, 10);
+                const dailyExpenses = expenses.filter(e => e.date === today);
+                const total = dailyExpenses.reduce((sum, e) => sum + e.amount, 0);
+                let expensesHTML = dailyExpenses.length > 0 ? dailyExpenses.map(exp => getExpenseItemHTML(exp, categories)).join('') : `<p class="empty-state">لا توجد مصروفات مسجلة اليوم.</p>`;
+                return `<div class="page"><div class="card"><h3><i data-lucide="sun"></i>مصروفات اليوم</h3><p class="amount">${formatCurrency(total)}</p></div><div class="item-list">${expensesHTML}</div></div>`;
+            }
+            
+            function createMonthlyPage({ expenses, categories }) {
+                const now = new Date();
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+                const monthlyExpenses = expenses.filter(e => e.date >= startOfMonth);
+                const total = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
+                const categoryTotals = {};
+                monthlyExpenses.forEach(exp => { categoryTotals[exp.categoryId] = (categoryTotals[exp.categoryId] || 0) + exp.amount; });
+                const sortedCategories = Object.entries(categoryTotals).sort(([, a], [, b]) => b - a);
+                let categoriesHTML = sortedCategories.length > 0 ? sortedCategories.map(([catId, catTotal]) => {
+                    const category = categories.find(c => c.id === catId); if (!category) return '';
+                    const percentage = total > 0 ? (catTotal / total) * 100 : 0;
+                    return `<div class="category-summary-item" style="display:flex; align-items:center; gap: var(--space-md); padding: var(--space-sm) 0;"><span style="width: 80px; text-align: right;">${escapeHTML(category.name)}</span><div class="progress-bar" style="flex-grow:1; height:8px; background-color:var(--c-secondary); border-radius:99px;"><div class="progress-fill" style="width:${percentage}%; background-color:${category.color}; height:100%; border-radius:99px;"></div></div><span>${formatCurrency(catTotal)}</span></div>`;
+                }).join('') : `<p class="empty-state">لا توجد بيانات لهذا الشهر.</p>`;
+                return `<div class="page"><div class="card"><h3><i data-lucide="calendar-month"></i>ملخص الشهر</h3><p class="amount">${formatCurrency(total)}</p></div><div class="card"><h3><i data-lucide="pie-chart"></i>الأعلى إنفاقًا</h3><div class="item-list">${categoriesHTML}</div></div></div>`;
+            }
+
+            function createCategoriesPage({ categories }) {
+                let categoriesHTML = categories.length > 0 ? categories.map(cat => getCategoryItemHTML(cat)).join('') : `<p class="empty-state">لا توجد فئات مخصصة.</p>`;
+                return `<div class="page"><div class="card"><h3><i data-lucide="tags"></i>إدارة الفئات</h3><div class="form-group"><label>اسم الفئة</label><input type="text" id="new-category-name" placeholder="مثال: تعليم"></div><div class="form-group"><label>اللون</label><input type="color" id="new-category-color" value="#8b5cf6"></div><button id="add-category-btn" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">إضافة فئة</button></div><div class="item-list">${categoriesHTML}</div></div>`;
+            }
+            
+            function getExpenseItemHTML(expense, categories) {
+                const category = categories.find(c => c.id === expense.categoryId) || { name: 'غير محدد', color: '#9ca3af', icon: 'tag' };
+                return `<div class="expense-item" data-id="${expense.id}"><div class="item-icon" style="background-color: ${category.color};"><i data-lucide="${category.icon || 'tag'}"></i></div><div class="item-details"><p class="item-name">${escapeHTML(expense.name)}</p><p class="item-category">${escapeHTML(category.name)}</p></div><p class="item-amount">${formatCurrency(expense.amount)}</p><div class="item-actions"><button class="btn-icon delete-expense"><i data-lucide="trash-2"></i></button></div></div>`;
+            }
+
+            function getCategoryItemHTML(category) {
+                return `<div class="category-item" data-id="${category.id}"><div class="item-icon" style="background-color: ${category.color};"><i data-lucide="${category.icon || 'tag'}"></i></div><div class="item-details"><p class="item-name">${escapeHTML(category.name)}</p></div><div class="item-actions"><button class="btn-icon delete-category"><i data-lucide="trash-2"></i></button></div></div>`;
+            }
+
+            function toggleModal(show, content = '') {
+                modalContainer.innerHTML = show ? `<div class="modal-backdrop active"><div class="modal">${content}</div></div>` : '';
+                if(show) lucide.createIcons();
+            }
+
+            function handleSaveExpense() {
+                const name = document.getElementById('expense-name').value.trim();
+                const amount = parseFloat(document.getElementById('expense-amount').value);
+                const categoryId = document.getElementById('expense-category').value;
+                if (!name || isNaN(amount) || !categoryId) return alert("يرجى ملء جميع الحقول");
+                const data = { name, amount, categoryId };
+                db.collection('users').doc(state.user.uid).collection('expenses').add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp(), date: new Date().toISOString().slice(0, 10) });
+                toggleModal(false);
+            }
+
+            function setupGlobalEventListeners() {
+                appContainer.addEventListener('click', e => {
+                    const targetBtn = e.target.closest('button');
+                    if (!targetBtn) return;
+                    
+                    if (targetBtn.id === 'google-signin-btn') auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+                    else if (targetBtn.id === 'anon-signin-btn') auth.signInAnonymously();
+                    else if (targetBtn.id === 'logout-btn') auth.signOut();
+                    else if (targetBtn.dataset.page) setState({ currentPage: targetBtn.dataset.page });
+                    else if (targetBtn.id === 'fab-add-expense') {
+                        const categoryOptions = state.categories.map(c => `<option value="${c.id}">${escapeHTML(c.name)}</option>`).join('');
+                        toggleModal(true, `<h3>إضافة مصروف</h3><div class="form-group"><label>الاسم</label><input id="expense-name"></div><div class="form-group"><label>المبلغ</label><input id="expense-amount" type="number"></div><div class="form-group"><label>الفئة</label><select id="expense-category">${categoryOptions}</select></div><div class="modal-actions"><button id="save-expense-btn" class="btn btn-primary">حفظ</button><button class="btn btn-secondary modal-cancel">إلغاء</button></div>`);
+                    }
+                    else if (targetBtn.id === 'add-category-btn') {
+                        const name = document.getElementById('new-category-name').value.trim();
+                        const color = document.getElementById('new-category-color').value;
+                        if(name) db.collection('users').doc(state.user.uid).collection('categories').add({name, color, icon: 'tag' });
+                    }
+                    else if(targetBtn.classList.contains('delete-expense')) {
+                        const id = targetBtn.closest('.expense-item').dataset.id;
+                        db.collection('users').doc(state.user.uid).collection('expenses').doc(id).delete();
+                    }
+                     else if(targetBtn.classList.contains('delete-category')) {
+                        const id = targetBtn.closest('.category-item').dataset.id;
+                        db.collection('users').doc(state.user.uid).collection('categories').doc(id).delete();
+                    }
+                });
+                modalContainer.addEventListener('click', e => {
+                    if (e.target.closest('.modal-cancel')) toggleModal(false);
+                    else if (e.target.id === 'save-expense-btn') handleSaveExpense();
+                });
+            }
+
+            function formatCurrency(amount) { return new Intl.NumberFormat('ar-AE', { style: 'currency', currency: 'AED' }).format(amount || 0); }
+            function escapeHTML(str) { return str.replace(/[&<>'"]/g, tag => ({'&':'&','<':'<','>':'>',"'":''','"':'"'}[tag]||tag)); }
+            
+            function init() {
+                appContainer.innerHTML = `<div class="screen active"><div class="spinner"></div><p>جاري التحميل...</p></div>`;
+                const timeout = setTimeout(() => { appContainer.innerHTML = `<div class="screen active"><p>فشل الاتصال. يرجى تحديث الصفحة.</p></div>`; }, 10000);
+
+                try {
+                    app = firebase.initializeApp(firebaseConfig);
+                    auth = firebase.auth();
+                    db = firebase.firestore();
+
+                    auth.onAuthStateChanged(user => {
+                        clearTimeout(timeout);
+                        if (state.unsubscribe.length > 0) state.unsubscribe.forEach(unsub => unsub());
+                        state.unsubscribe = [];
+
+                        if (user) {
+                            const unsubExpenses = db.collection('users').doc(user.uid).collection('expenses').orderBy('createdAt', 'desc').onSnapshot(snap => setState({ expenses: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
+                            const unsubCategories = db.collection('users').doc(user.uid).collection('categories').onSnapshot(snap => {
+                                const cats = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                                if (cats.length === 0) {
+                                     [{ name: 'طعام', color: '#ef4444', icon: 'utensils' }, { name: 'مواصلات', color: '#3b82f6', icon: 'car' }].forEach(cat => db.collection('users').doc(user.uid).collection('categories').add(cat));
+                                }
+                                setState({ categories: cats });
+                            });
+                            state.unsubscribe.push(unsubExpenses, unsubCategories);
+                            setState({ user });
+                        } else {
+                            setState({ user: null, expenses: [], categories: [] });
+                        }
+                    });
+
+                    state.addChangeListener(render);
+                    setupGlobalEventListeners();
+
+                } catch (e) { clearTimeout(timeout); appContainer.innerHTML = `<div class="screen active"><p>حدث خطأ فادح.</p></div>`; console.error(e); }
+            }
+            init();
         });
     </script>
 </body>
