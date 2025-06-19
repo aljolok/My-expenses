@@ -603,6 +603,9 @@ body.dark-mode .category-list li {
     flex-grow: 1; /* Allow them to grow within flex container */
     flex-basis: auto; /* Allow wrap */
     max-width: 48%; /* Two columns roughly */
+    white-space: nowrap; /* Prevent text wrap */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add ellipsis if text overflows */
 }
 
 .category-button:hover {
