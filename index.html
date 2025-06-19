@@ -3,337 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المصروفات الذكية</title>
-
-    <!-- PWA & SEO (Manifest link will be added later) -->
-    <!-- <link rel="manifest" href="./manifest.json"> -->
-    <meta name="theme-color" id="theme-color-meta" content="#ffffff">
-    <meta name="description" content="تطبيق ذكي لإدارة مصروفاتك اليومية بسهولة وفعالية.">
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-
-    <!-- Icons Library -->
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-
-    <!-- Styles (Embedded) -->
+    <title>تشخيص اتصال Firebase</title>
     <style>
-        /* =================================================================
-           Expense App - Professional & Enhanced Stylesheet
-           ================================================================= */
-
-        /* --- 1. Root & Theming Variables --- */
-        :root { /* Colors */ --c-primary: #4f46e5; --c-primary-light: #6366f1; --c-primary-dark: #4338ca; --c-secondary: #f3f4f6; --c-text-primary: #111827; --c-text-secondary: #6b7280; --c-bg-primary: #ffffff; --c-bg-secondary: #f9fafb; --c-border: #e5e7eb; --c-success: #10b981; --c-danger: #ef4444; --c-warning: #f59e0b; --c-white: #ffffff; --c-black: #000000; /* Gradients */ --grad-primary: linear-gradient(135deg, var(--c-primary-light), var(--c-primary)); --grad-fab: linear-gradient(45deg, #f43f5e, #f97316); --grad-bg: linear-gradient(135deg, #f9fafb, #e5e7eb); /* Spacing */ --space-xs: 0.25rem; --space-sm: 0.5rem; --space-md: 1rem; --space-lg: 1.5rem; --space-xl: 2.5rem; /* Typography */ --font-main: 'Cairo', sans-serif; --fs-sm: 0.875rem; --fs-base: 1rem; --fs-lg: 1.125rem; --fs-xl: 1.5rem; --fs-2xl: 2rem; /* Borders & Shadows */ --radius-sm: 0.25rem; --radius-md: 0.5rem; --radius-lg: 1rem; --radius-full: 9999px; --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* Transitions */ --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        [data-theme="dark"] { --c-primary: #6366f1; --c-primary-light: #818cf8; --c-primary-dark: #4f46e5; --c-secondary: #374151; --c-text-primary: #f9fafb; --c-text-secondary: #9ca3af; --c-bg-primary: #111827; --c-bg-secondary: #1f2937; --c-border: #374151; --grad-bg: linear-gradient(135deg, #1f2937, #111827); }
-        /* --- 2. Base & Reset --- */
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html { -webkit-tap-highlight-color: transparent; }
-        body { font-family: var(--font-main); background: var(--grad-bg); color: var(--c-text-primary); transition: var(--transition); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-        /* --- 3. Layout --- */
-        #app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; background-color: var(--c-bg-primary); position: relative; overflow-x: hidden; box-shadow: 0 0 40px rgba(0,0,0,0.1); }
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--space-lg); transition: opacity 0.3s, transform 0.3s; }
-        .screen.hidden { opacity: 0; pointer-events: none; transform: scale(0.95); }
-        #main-app.screen { justify-content: flex-start; padding: 0; }
-        .app-header { width: 100%; padding: var(--space-md); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background-color: color-mix(in srgb, var(--c-bg-primary) 80%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--c-border); z-index: 10; }
-        #main-content { flex-grow: 1; width: 100%; overflow-y: auto; padding: var(--space-md); }
-        .app-nav { display: flex; justify-content: space-around; align-items: center; width: 100%; padding: var(--space-sm) 0; background-color: var(--c-bg-primary); border-top: 1px solid var(--c-border); position: sticky; bottom: 0; z-index: 10; box-shadow: 0 -5px 15px -3px rgba(0,0,0,0.05); }
-        /* --- 4. Components --- */
-        .btn, .btn-icon, .nav-btn { border: none; cursor: pointer; font-family: inherit; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); transition: var(--transition); border-radius: var(--radius-md); }
-        .btn { padding: var(--space-sm) var(--space-md); }
-        .btn-primary { background: var(--grad-primary); color: var(--c-white); box-shadow: var(--shadow-md); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-        .btn-secondary { background-color: var(--c-secondary); color: var(--c-text-primary); }
-        .btn-secondary:hover { background-color: #e5e7eb; }
-        [data-theme="dark"] .btn-secondary:hover { background-color: #4b5569; }
-        .btn-danger { background-color: var(--c-danger); color: var(--c-white); }
-        .btn-icon { background: transparent; padding: var(--space-sm); border-radius: var(--radius-full); }
-        .btn-icon:hover { background-color: var(--c-secondary); }
-        .nav-btn { flex-direction: column; gap: var(--space-xs); font-size: var(--fs-sm); color: var(--c-text-secondary); background: transparent; padding: var(--space-sm); flex-grow: 1; position: relative; }
-        .nav-btn::after { content: ''; position: absolute; bottom: -5px; width: 0; height: 3px; background-color: var(--c-primary); border-radius: 3px; transition: width 0.3s; }
-        .nav-btn.active { color: var(--c-primary); transform: translateY(-2px); }
-        .nav-btn.active::after { width: 24px; }
-        .nav-fab { width: 60px; height: 60px; border-radius: var(--radius-full); background: var(--grad-fab); color: var(--c-white); box-shadow: var(--shadow-lg); display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transform: translateY(-20px); transition: var(--transition); flex-shrink: 0; }
-        .nav-fab:hover { transform: translateY(-24px) scale(1.05); }
-        .auth-card { text-align: center; background-color: var(--c-bg-primary); padding: var(--space-xl); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 90%; max-width: 400px; animation: fadeIn 0.5s ease-out; }
-        .logo { width: 60px; height: 60px; background: var(--grad-primary); color: var(--c-white); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-md); }
-        .logo i { width: 32px; height: 32px; }
-        .auth-card h1 { font-size: var(--fs-xl); margin-bottom: var(--space-sm); }
-        .auth-card p { color: var(--c-text-secondary); margin-bottom: var(--space-lg); }
-        .auth-buttons { display: flex; flex-direction: column; gap: var(--space-md); }
-        .user-profile { display: flex; align-items: center; gap: var(--space-md); }
-        #user-avatar { width: 40px; height: 40px; border-radius: var(--radius-full); object-fit: cover; background-color: var(--c-secondary); border: 2px solid var(--c-primary); }
-        #user-name { font-size: var(--fs-lg); font-weight: 700; margin: 0; }
-        #user-email { font-size: var(--fs-sm); color: var(--c-text-secondary); margin: 0; }
-        .header-actions { display: flex; align-items: center; }
-        .page { display: flex; flex-direction: column; gap: var(--space-md); animation: fadeIn 0.5s; width: 100%; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .card { background-color: var(--c-bg-primary); padding: var(--space-md); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--c-border); }
-        .card h3 { font-size: var(--fs-lg); margin-bottom: var(--space-md); display: flex; align-items: center; gap: var(--space-sm); color: var(--c-text-primary); }
-        .card .amount { font-size: var(--fs-2xl); font-weight: 700; color: var(--c-primary); }
-        .item-list { display: flex; flex-direction: column; gap: var(--space-sm); }
-        .expense-item, .category-item { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-md); background-color: var(--c-bg-primary); border-radius: var(--radius-md); border-left: 4px solid transparent; transition: var(--transition); }
-        .expense-item:hover { transform: translateX(4px); box-shadow: var(--shadow-md); border-left-color: var(--c-primary); }
-        .item-icon { width: 40px; height: 40px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; color: var(--c-white); flex-shrink: 0; }
-        .category-item .item-icon { border-radius: var(--radius-md); }
-        .item-details { flex-grow: 1; }
-        .item-name { font-weight: 600; }
-        .item-category { font-size: var(--fs-sm); color: var(--c-text-secondary); }
-        .item-amount { font-weight: 700; }
-        .item-actions { display: flex; margin-left: auto; }
-        .category-summary-item { display: flex; align-items: center; gap: var(--space-md); font-size: var(--fs-sm); }
-        .progress-bar { flex-grow: 1; height: 8px; background-color: var(--c-secondary); border-radius: var(--radius-full); overflow: hidden; }
-        .progress-fill { height: 100%; border-radius: var(--radius-full); transition: width 0.5s; }
-        #modal-backdrop { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 50; transition: opacity 0.3s; backdrop-filter: blur(4px); }
-        #modal-backdrop.hidden { opacity: 0; pointer-events: none; }
-        .modal { background-color: var(--c-bg-primary); padding: var(--space-lg); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: var(--space-md); animation: modal-enter 0.3s; }
-        @keyframes modal-enter { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        .modal h3 { font-size: var(--fs-xl); }
-        .modal-actions { display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-md); }
-        .form-group { display: flex; flex-direction: column; gap: var(--space-sm); }
-        input, select { width: 100%; padding: var(--space-sm) var(--space-md); border: 1px solid var(--c-border); border-radius: var(--radius-md); background-color: var(--c-bg-secondary); font-family: inherit; font-size: var(--fs-base); color: var(--c-text-primary); }
-        input:focus, select:focus { outline: none; border-color: var(--c-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-primary) 20%, transparent); }
-        input[type="color"] { padding: 0; height: 40px; }
-        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background-color: var(--c-text-primary); color: var(--c-bg-primary); padding: var(--space-md); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: var(--space-md); z-index: 100; transition: transform 0.5s, opacity 0.5s; opacity: 0; }
-        #toast.show { opacity: 1; transform: translate(-50%, 0); }
-        #toast.success { background-color: var(--c-success); color: var(--c-white); }
-        #toast.error { background-color: var(--c-danger); color: var(--c-white); }
-        #toast.hidden { display: none; }
-        /* --- 5. Helpers --- */
-        .spinner { width: 40px; height: 40px; border: 4px solid var(--c-secondary); border-top-color: var(--c-primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        body { font-family: monospace; background-color: #111; color: #eee; padding: 20px; }
+        h1 { color: #ffc107; border-bottom: 1px solid #ffc107; padding-bottom: 10px; }
+        #log { list-style: none; padding: 0; }
+        #log li { padding: 8px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 10px; }
+        .success::before { content: '✅'; color: #28a745; }
+        .error::before { content: '❌'; color: #dc3545; }
+        .info::before { content: 'ℹ️'; color: #17a2b8; }
+        .pending::before { content: '⏳'; color: #ffc107; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        #offline-indicator { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background-color: var(--c-warning); color: var(--c-black); padding: var(--space-sm) var(--space-md); border-radius: var(--radius-lg); font-size: var(--fs-sm); box-shadow: var(--shadow-md); display: flex; align-items: center; gap: var(--space-sm); z-index: 20; animation: fadeIn 0.5s; }
-        #offline-indicator.hidden { display: none; }
-        .empty-state { text-align: center; color: var(--c-text-secondary); padding: var(--space-xl) 0; }
     </style>
 </head>
 <body>
-
-    <!-- ======== App Container ======== -->
-    <div id="app-container">
-
-        <!-- ======== Loading Screen ======== -->
-        <div id="loading-screen" class="screen">
-            <div class="spinner"></div>
-            <p>جاري التحقق من حالة الدخول...</p>
-        </div>
-
-        <!-- ======== Auth Screen ======== -->
-        <div id="auth-screen" class="screen hidden">
-            <div class="auth-card">
-                <div class="logo">
-                    <i data-lucide="wallet"></i>
-                </div>
-                <h1>المصروفات الذكية</h1>
-                <p>تتبع نفقاتك بسهولة وأناقة.</p>
-                <div class="auth-buttons">
-                    <button id="google-signin-btn" class="btn btn-primary">
-                        <i data-lucide="log-in"></i>
-                        <span>تسجيل الدخول بـ Google</span>
-                    </button>
-                    <button id="anon-signin-btn" class="btn btn-secondary">
-                        <i data-lucide="user-x"></i>
-                        <span>التصفح كمجهول</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ======== Main App Screen ======== -->
-        <div id="main-app" class="screen hidden">
-            <!-- Header -->
-            <header class="app-header">
-                <div class="user-profile">
-                    <img id="user-avatar" alt="User Avatar">
-                    <div>
-                        <h2 id="user-name">مرحباً</h2>
-                        <p id="user-email">أهلاً بك</p>
-                    </div>
-                </div>
-                <div class="header-actions">
-                    <button id="theme-toggle-btn" class="btn-icon"><i data-lucide="sun"></i></button>
-                    <button id="logout-btn" class="btn-icon"><i data-lucide="log-out"></i></button>
-                </div>
-            </header>
-
-            <!-- Main Content -->
-            <main id="main-content">
-                <!-- Pages will be rendered here by JS -->
-            </main>
-
-            <!-- Navigation Bar -->
-            <nav class="app-nav">
-                <button class="nav-btn active" data-page="daily"><i data-lucide="calendar-day"></i><span>يومي</span></button>
-                <button class="nav-btn" data-page="monthly"><i data-lucide="bar-chart-3"></i><span>شهري</span></button>
-                <button id="fab-add-expense" class="nav-fab"><i data-lucide="plus"></i></button>
-                <button class="nav-btn" data-page="categories"><i data-lucide="tags"></i><span>فئات</span></button>
-                <button class="nav-btn" data-page="settings"><i data-lucide="settings"></i><span>إعدادات</span></button>
-            </nav>
-        </div>
-    </div>
-
-    <!-- ======== Modals ======== -->
-    <div id="modal-backdrop" class="hidden">
-        <div id="expense-modal" class="modal hidden">
-             <!-- ... content ... -->
-        </div>
-        <div id="confirm-modal" class="modal hidden">
-             <!-- ... content ... -->
-        </div>
-    </div>
-    
-    <!-- ======== Toast & Offline Indicator ======== -->
-    <div id="toast" class="hidden">
-        <!-- ... content ... -->
-    </div>
-    <div id="offline-indicator" class="hidden">
-         <!-- ... content ... -->
-    </div>
+    <h1>صفحة التشخيص الفني</h1>
+    <p>هذه الصفحة تختبر الاتصال بخدمات Firebase. يرجى الانتظار 15 ثانية ثم أخذ لقطة شاشة وإرسالها.</p>
+    <ul id="log"></ul>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- App Script (Embedded) -->
+    <!-- Diagnostic Script -->
     <script>
-        // =================================================================
-        // Expense App - Bulletproof, Single-File Version
-        // =================================================================
+        const logContainer = document.getElementById('log');
 
-        // --- 1. Firebase Setup ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ",
-            authDomain: "my-expenses-81714.firebaseapp.com",
-            projectId: "my-expenses-81714",
-            storageBucket: "my-expenses-81714.firebasestorage.app",
-            messagingSenderId: "672207051964",
-            appId: "1:672207051964:web:b6e0cedc143bd06fd584b9",
-            measurementId: "G-YBTY3QD4YQ"
-        };
-        let app, auth, db;
-
-        // --- 2. State Management ---
-        const state = { user: null, expenses: [], categories: [], currentPage: 'daily', isLoading: true, isEditing: null, unsubscribe: [], setState(newState) { Object.assign(this, newState); ui.render(this); }, cleanupListeners() { this.unsubscribe.forEach(unsub => unsub()); this.unsubscribe = []; } };
-
-        // --- 3. UI Rendering & DOM Elements ---
-        const ui = {
-            elements: { loadingScreen: document.getElementById('loading-screen'), loadingText: document.querySelector('#loading-screen p'), authScreen: document.getElementById('auth-screen'), mainApp: document.getElementById('main-app'), mainContent: document.getElementById('main-content'), googleSigninBtn: document.getElementById('google-signin-btn'), anonSigninBtn: document.getElementById('anon-signin-btn'), logoutBtn: document.getElementById('logout-btn'), themeToggleBtn: document.getElementById('theme-toggle-btn'), userAvatar: document.getElementById('user-avatar'), userName: document.getElementById('user-name'), userEmail: document.getElementById('user-email'), navButtons: document.querySelectorAll('.nav-btn'), fabAddExpense: document.getElementById('fab-add-expense'), modalBackdrop: document.getElementById('modal-backdrop'), expenseModal: document.getElementById('expense-modal'), expenseModalTitle: document.getElementById('expense-modal-title'), expenseNameInput: document.getElementById('expense-name'), expenseAmountInput: document.getElementById('expense-amount'), expenseCategorySelect: document.getElementById('expense-category'), saveExpenseBtn: document.getElementById('save-expense-btn'), cancelExpenseBtn: document.getElementById('cancel-expense-btn'), toast: document.getElementById('toast'), toastIcon: document.getElementById('toast-icon'), toastMessage: document.getElementById('toast-message'), offlineIndicator: document.getElementById('offline-indicator'), confirmModal: document.getElementById('confirm-modal'), confirmTitle: document.getElementById('confirm-title'), confirmMessage: document.getElementById('confirm-message'), confirmYesBtn: document.getElementById('confirm-yes-btn'), confirmNoBtn: document.getElementById('confirm-no-btn'), },
-            defaultAvatarSVG: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xOCAyMHYtMWMwLTIuMi0xLjgtNC00LTRoLTRjLTIuMiAwLTQgMS44LTQgNHYxIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSI3IiByPSI0Ii8+PC9zdmc+",
-            render(appState) { this.elements.loadingScreen.classList.toggle('hidden', !appState.isLoading); this.elements.authScreen.classList.toggle('hidden', !!appState.user || appState.isLoading); this.elements.mainApp.classList.toggle('hidden', !appState.user || appState.isLoading); if (appState.user && !appState.isLoading) { this.updateHeader(appState.user); this.renderPage(appState.currentPage, appState); } },
-            updateHeader(user) { this.elements.userAvatar.src = user.photoURL || this.defaultAvatarSVG; this.elements.userName.textContent = user.isAnonymous ? 'مستخدم مجهول' : (user.displayName || 'مستخدم جديد'); this.elements.userEmail.textContent = user.isAnonymous ? `ID: ${user.uid.slice(0,6)}...` : user.email; },
-            renderPage(pageName, appState) { this.elements.mainContent.innerHTML = ''; let pageContent; switch (pageName) { case 'daily': pageContent = this.createDailyPage(appState); break; case 'monthly': pageContent = this.createMonthlyPage(appState); break; case 'categories': pageContent = this.createCategoriesPage(appState); break; case 'settings': pageContent = this.createSettingsPage(appState); break; default: pageContent = document.createElement('div'); } this.elements.mainContent.appendChild(pageContent); lucide.createIcons(); },
-            createDailyPage({ expenses, categories }) { const page = document.createElement('div'); page.className = 'page active'; const today = new Date().toISOString().slice(0, 10); const dailyExpenses = expenses.filter(e => e.date === today).sort((a,b) => b.createdAt.seconds - a.createdAt.seconds); const total = dailyExpenses.reduce((sum, e) => sum + e.amount, 0); page.innerHTML = `<div class="card"><h3><i data-lucide="sun"></i>مصروفات اليوم</h3><p class="amount">${utils.formatCurrency(total)}</p></div><div id="daily-list" class="item-list"></div>`; const list = page.querySelector('#daily-list'); if (dailyExpenses.length > 0) { dailyExpenses.forEach(expense => list.appendChild(this.createExpenseItem(expense, categories))); } else { list.innerHTML = `<p class="empty-state">لا توجد مصروفات مسجلة اليوم.</p>`; } return page; },
-            createMonthlyPage({ expenses, categories }) { const page = document.createElement('div'); page.className = 'page active'; const now = new Date(); const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10); const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10); const monthlyExpenses = expenses.filter(e => e.date >= startOfMonth && e.date <= endOfMonth); const total = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0); const categoryTotals = {}; monthlyExpenses.forEach(exp => { categoryTotals[exp.categoryId] = (categoryTotals[exp.categoryId] || 0) + exp.amount; }); const sortedCategories = Object.entries(categoryTotals).sort(([,a],[,b]) => b - a); page.innerHTML = `<div class="card"><h3><i data-lucide="calendar-month"></i>ملخص الشهر</h3><p class="amount">${utils.formatCurrency(total)}</p></div><div class="card"><h3><i data-lucide="pie-chart"></i>الأعلى إنفاقًا</h3><div id="monthly-category-list" class="item-list"></div></div>`; const catList = page.querySelector('#monthly-category-list'); if (sortedCategories.length > 0) { sortedCategories.forEach(([catId, catTotal]) => { const category = categories.find(c => c.id === catId); if(category) { const percentage = total > 0 ? (catTotal / total) * 100 : 0; catList.innerHTML += `<div class="category-summary-item"><span>${category.name}</span><div class="progress-bar"><div class="progress-fill" style="width:${percentage}%; background-color:${category.color};"></div></div><span>${utils.formatCurrency(catTotal)}</span></div>`; } }); } else { catList.innerHTML = `<p class="empty-state">لا توجد بيانات لهذا الشهر.</p>`; } return page; },
-            createCategoriesPage({ categories }) { const page = document.createElement('div'); page.className = 'page active'; page.innerHTML = `<div class="card"><h3><i data-lucide="tags"></i>إدارة الفئات</h3><div class="form-group"><input type="text" id="new-category-name" placeholder="اسم الفئة الجديدة"><input type="color" id="new-category-color" value="#4f46e5"></div><button id="add-category-btn" class="btn btn-primary" style="width: 100%; margin-top: var(--space-md);">إضافة فئة</button></div><div id="category-list" class="item-list"></div>`; const list = page.querySelector('#category-list'); if (categories.length > 0) { categories.forEach(cat => list.appendChild(this.createCategoryItem(cat))); } else { list.innerHTML = `<p class="empty-state">لا توجد فئات. أضف فئة لتبدأ.</p>`; } return page; },
-            createSettingsPage() { const page = document.createElement('div'); page.className = 'page active'; page.innerHTML = `<div class="card"><h3><i data-lucide="settings"></i>الإعدادات</h3><button id="clear-data-btn" class="btn btn-danger" style="width: 100%;">مسح جميع البيانات</button></div>`; return page; },
-            createExpenseItem(expense, categories) { const item = document.createElement('div'); item.className = 'expense-item'; const category = categories.find(c => c.id === expense.categoryId) || { name: 'غير محدد', color: '#9ca3af' }; item.innerHTML = `<div class="item-icon" style="background-color: ${category.color};"><i data-lucide="tag"></i></div><div class="item-details"><p class="item-name">${utils.escapeHTML(expense.name)}</p><p class="item-category">${utils.escapeHTML(category.name)}</p></div><p class="item-amount">${utils.formatCurrency(expense.amount)}</p><div class="item-actions"><button class="btn-icon edit-expense" data-id="${expense.id}"><i data-lucide="edit-3"></i></button><button class="btn-icon delete-expense" data-id="${expense.id}"><i data-lucide="trash-2"></i></button></div>`; return item; },
-            createCategoryItem(category) { const item = document.createElement('div'); item.className = 'category-item'; item.innerHTML = `<div class="item-icon" style="background-color: ${category.color};"></div><div class="item-details"><p class="item-name">${utils.escapeHTML(category.name)}</p></div><div class="item-actions"><button class="btn-icon delete-category" data-id="${category.id}"><i data-lucide="trash-2"></i></button></div>`; return item; },
-            toggleModal(modal, show) { this.elements.modalBackdrop.classList.toggle('hidden', !show); modal.classList.toggle('hidden', !show); },
-            setupExpenseModal(expense, categories) { state.isEditing = expense ? { type: 'expense', id: expense.id } : null; this.elements.expenseModalTitle.textContent = expense ? 'تعديل المصروف' : 'إضافة مصروف'; this.elements.expenseNameInput.value = expense ? expense.name : ''; this.elements.expenseAmountInput.value = expense ? expense.amount : ''; if (categories.length === 0) { this.elements.expenseCategorySelect.innerHTML = `<option disabled>لا توجد فئات</option>`; } else { this.elements.expenseCategorySelect.innerHTML = categories.map(c => `<option value="${c.id}" ${expense && expense.categoryId === c.id ? 'selected' : ''}>${utils.escapeHTML(c.name)}</option>`).join(''); } this.toggleModal(this.elements.expenseModal, true); },
-            showToast(message, type = 'success', duration = 3000) { const { toast, toastMessage, toastIcon } = this.elements; toast.className = ``; toast.classList.add(type, 'show'); toastMessage.textContent = message; toastIcon.setAttribute('data-lucide', type === 'error' ? 'x-circle' : 'check-circle'); lucide.createIcons(); setTimeout(() => toast.classList.remove('show'), duration); },
-            showConfirmation(title, message, onConfirm) { this.elements.confirmTitle.textContent = title; this.elements.confirmMessage.textContent = message; this.toggleModal(this.elements.confirmModal, true); const yesHandler = () => { onConfirm(); cleanup(); }; const noHandler = () => cleanup(); const cleanup = () => { this.toggleModal(this.elements.confirmModal, false); this.elements.confirmYesBtn.removeEventListener('click', yesHandler); this.elements.confirmNoBtn.removeEventListener('click', noHandler); }; this.elements.confirmYesBtn.addEventListener('click', yesHandler, { once: true }); this.elements.confirmNoBtn.addEventListener('click', noHandler, { once: true }); },
-            handleTheme(isDark) { document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light'); this.elements.themeToggleBtn.innerHTML = isDark ? `<i data-lucide="sun"></i>` : `<i data-lucide="moon"></i>`; lucide.createIcons(); }
-        };
-
-        // --- 4. API & Data Logic ---
-        const api = {
-            expensesCol: (uid) => db.collection('users').doc(uid).collection('expenses'),
-            categoriesCol: (uid) => db.collection('users').doc(uid).collection('categories'),
-            addExpense: (uid, expense) => api.expensesCol(uid).add({ ...expense, createdAt: firebase.firestore.FieldValue.serverTimestamp(), date: new Date().toISOString().slice(0, 10) }),
-            updateExpense: (uid, id, expense) => api.expensesCol(uid).doc(id).update(expense),
-            deleteExpense: (uid, id) => api.expensesCol(uid).doc(id).delete(),
-            addCategory: (uid, category) => api.categoriesCol(uid).add(category),
-            deleteCategory: (uid, id) => api.categoriesCol(uid).doc(id).delete(),
-            async deleteAllUserData(uid) { const expensesQuery = await this.expensesCol(uid).get(); const categoriesQuery = await this.categoriesCol(uid).get(); const batch = db.batch(); expensesQuery.forEach(doc => batch.delete(doc.ref)); categoriesQuery.forEach(doc => batch.delete(doc.ref)); return batch.commit(); },
-            listenToExpenses: (uid, callback) => api.expensesCol(uid).orderBy('createdAt', 'desc').onSnapshot(snapshot => callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))),
-            listenToCategories: (uid, callback) => api.categoriesCol(uid).onSnapshot(snapshot => callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))),
-            async ensureDefaultCategories(uid, currentCategories) { if (currentCategories.length > 0) return; const defaultCats = [{ name: 'طعام', color: '#ef4444' }, { name: 'مواصلات', color: '#3b82f6' }, { name: 'فواتير', color: '#f97316' }, { name: 'تسوق', color: '#10b981' },]; for (const cat of defaultCats) { await this.addCategory(uid, cat); } }
-        };
-
-        // --- 5. Authentication Logic ---
-        const authLogic = {
-            init() {
-                try {
-                    auth.onAuthStateChanged(user => {
-                        state.cleanupListeners();
-                        if (user) {
-                            const unsubExpenses = api.listenToExpenses(user.uid, expenses => state.setState({ expenses }));
-                            const unsubCategories = api.listenToCategories(user.uid, categories => { api.ensureDefaultCategories(user.uid, categories); state.setState({ categories }); });
-                            state.unsubscribe.push(unsubExpenses, unsubCategories);
-                            state.setState({ user: user, isLoading: false });
-                        } else {
-                            state.setState({ user: null, expenses: [], categories: [], isLoading: false });
-                        }
-                    });
-                } catch (error) {
-                    console.error("Auth observer setup failed:", error);
-                    ui.elements.loadingText.textContent = "خطأ في المصادقة. حاول تحديث الصفحة.";
-                }
-            },
-            signInWithGoogle: () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => ui.showToast("فشل تسجيل الدخول", "error")),
-            signInAnonymously: () => auth.signInAnonymously().catch(err => ui.showToast("فشل تسجيل الدخول كمجهول", "error")),
-            signOut: () => auth.signOut().catch(err => ui.showToast("فشل تسجيل الخروج", "error")),
-        };
-
-        // --- 6. Utilities ---
-        const utils = { formatCurrency: (amount) => new Intl.NumberFormat('ar-AE', { style: 'currency', currency: 'AED' }).format(amount || 0), escapeHTML: (str) => str.replace(/[&<>'"]/g, tag => ({'&':'&', '<':'<', '>':'>', "'":''', '"':'"'}[tag] || tag)), };
-
-        // --- 7. Event Handlers & Business Logic ---
-        function setupEventListeners() {
-            const { elements } = ui;
-            elements.googleSigninBtn.addEventListener('click', authLogic.signInWithGoogle);
-            elements.anonSigninBtn.addEventListener('click', authLogic.signInAnonymously);
-            elements.logoutBtn.addEventListener('click', authLogic.signOut);
-            elements.navButtons.forEach(btn => btn.addEventListener('click', () => { elements.navButtons.forEach(b => b.classList.remove('active')); btn.classList.add('active'); state.setState({ currentPage: btn.dataset.page }); }));
-            elements.themeToggleBtn.addEventListener('click', () => { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; localStorage.setItem('theme', !isDark ? 'dark' : 'light'); ui.handleTheme(!isDark); });
-            elements.fabAddExpense.addEventListener('click', () => ui.setupExpenseModal(null, state.categories));
-            elements.cancelExpenseBtn.addEventListener('click', () => ui.toggleModal(elements.expenseModal, false));
-            elements.saveExpenseBtn.addEventListener('click', handleSaveExpense);
-            elements.mainApp.addEventListener('click', (e) => { const editBtn = e.target.closest('.edit-expense'); if (editBtn) { const expense = state.expenses.find(ex => ex.id === editBtn.dataset.id); ui.setupExpenseModal(expense, state.categories); } const deleteBtn = e.target.closest('.delete-expense'); if (deleteBtn) { ui.showConfirmation('حذف المصروف', 'هل أنت متأكد؟', () => { api.deleteExpense(state.user.uid, deleteBtn.dataset.id).then(() => ui.showToast('تم الحذف')).catch(() => ui.showToast('فشل الحذف', 'error')); }); } const addCatBtn = e.target.closest('#add-category-btn'); if(addCatBtn) handleAddCategory(); const deleteCatBtn = e.target.closest('.delete-category'); if(deleteCatBtn) { ui.showConfirmation('حذف الفئة', 'هل أنت متأكد؟', () => { api.deleteCategory(state.user.uid, deleteCatBtn.dataset.id).then(() => ui.showToast('تم حذف الفئة')).catch(() => ui.showToast('فشل حذف الفئة', 'error')); }); } const clearDataBtn = e.target.closest('#clear-data-btn'); if(clearDataBtn) { ui.showConfirmation('مسح جميع البيانات', 'تحذير! سيتم حذف جميع المصروفات والفئات نهائياً.', () => { api.deleteAllUserData(state.user.uid).then(() => ui.showToast('تم مسح جميع البيانات')).catch(() => ui.showToast('حدث خطأ', 'error')); }); } });
-            window.addEventListener('online', () => elements.offlineIndicator.classList.add('hidden')); window.addEventListener('offline', () => elements.offlineIndicator.classList.remove('hidden'));
-        }
-        async function handleSaveExpense() { const { elements } = ui; const name = elements.expenseNameInput.value.trim(); const amount = parseFloat(elements.expenseAmountInput.value); const categoryId = elements.expenseCategorySelect.value; if (!name || isNaN(amount) || !categoryId) return ui.showToast("يرجى ملء جميع الحقول", "error"); const expenseData = { name, amount, categoryId }; try { const action = state.isEditing ? api.updateExpense(state.user.uid, state.isEditing.id, expenseData) : api.addExpense(state.user.uid, expenseData); await action; ui.showToast(state.isEditing ? "تم تحديث المصروف" : "تمت إضافة المصروف"); ui.toggleModal(elements.expenseModal, false); } catch (error) { ui.showToast("حدث خطأ أثناء الحفظ", "error"); } }
-        async function handleAddCategory() { const nameInput = document.getElementById('new-category-name'); const colorInput = document.getElementById('new-category-color'); const name = nameInput.value.trim(); if (!name) return ui.showToast('اسم الفئة مطلوب', 'error'); try { await api.addCategory(state.user.uid, { name, color: colorInput.value }); ui.showToast('تمت إضافة الفئة'); nameInput.value = ''; } catch(error) { ui.showToast('فشل إضافة الفئة', 'error'); } }
-
-        // --- 8. Initialization ---
-        function initializeApp() {
-            // Safety timeout: If app is still loading after 10 seconds, show an error.
-            setTimeout(() => {
-                if (state.isLoading) {
-                    console.error("App initialization timed out.");
-                    ui.elements.loadingText.textContent = "فشل الاتصال. يرجى التحقق من اتصالك بالإنترنت وتحديث الصفحة.";
-                }
-            }, 10000);
-
-            // Check if Firebase is loaded.
-            if (typeof firebase === 'undefined' || typeof firebase.app === 'undefined') {
-                console.error('Firebase SDK not loaded. Cannot initialize app.');
-                ui.elements.loadingText.textContent = "فشل تحميل الخدمات. يرجى تحديث الصفحة.";
-                return;
-            }
-            
-            try {
-                app = firebase.initializeApp(firebaseConfig);
-                auth = firebase.auth();
-                db = firebase.firestore();
-                
-                ui.handleTheme(localStorage.getItem('theme') === 'dark');
-                ui.elements.offlineIndicator.classList.toggle('hidden', navigator.onLine);
-                setupEventListeners();
-                
-                authLogic.init();
-                ui.render(state);
-                
-                console.log("Expense App Initialized Successfully");
-            } catch(error) {
-                console.error("Critical initialization error:", error);
-                ui.elements.loadingText.textContent = "حدث خطأ فادح أثناء تشغيل التطبيق.";
-            }
+        function logStatus(message, status = 'info') {
+            const li = document.createElement('li');
+            li.className = status;
+            li.textContent = message;
+            logContainer.appendChild(li);
         }
 
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        logStatus('بدء تشغيل سكربت التشخيص...', 'info');
+
+        // 1. Check if the global firebase object is loaded
+        if (typeof firebase !== 'undefined') {
+            logStatus('تم تحميل مكتبة Firebase الرئيسية بنجاح.', 'success');
+        } else {
+            logStatus('فشل تحميل مكتبة Firebase الرئيسية. تحقق من اتصال الإنترنت أو وجود أدوات حظر.', 'error');
+        }
+
+        // 2. Try to initialize the Firebase app
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ",
+                authDomain: "my-expenses-81714.firebaseapp.com",
+                projectId: "my-expenses-81714",
+                storageBucket: "my-expenses-81714.firebasestorage.app",
+                messagingSenderId: "672207051964",
+                appId: "1:672207051964:web:b6e0cedc143bd06fd584b9",
+                measurementId: "G-YBTY3QD4YQ"
+            };
+            firebase.initializeApp(firebaseConfig);
+            logStatus('تم تهيئة تطبيق Firebase بنجاح (initializeApp).', 'success');
+        } catch (e) {
+            logStatus(`فشل تهيئة تطبيق Firebase: ${e.message}`, 'error');
+        }
+
+        // 3. Check for Auth and Firestore services
+        if (firebase && typeof firebase.auth === 'function') {
+            logStatus('تم العثور على خدمة المصادقة (firebase.auth).', 'success');
+        } else {
+            logStatus('لم يتم العثور على خدمة المصادقة. قد يكون هناك فشل في تحميل السكربت.', 'error');
+        }
+
+        if (firebase && typeof firebase.firestore === 'function') {
+            logStatus('تم العثور على خدمة Firestore (firebase.firestore).', 'success');
+        } else {
+            logStatus('لم يتم العثور على خدمة Firestore. قد يكون هناك فشل في تحميل السكربت.', 'error');
+        }
+
+        // 4. Try to use the Auth service and set up the listener
+        logStatus('محاولة إعداد مراقب حالة المصادقة (onAuthStateChanged)...', 'pending');
+        let authStateChangedFired = false;
+        try {
+            const auth = firebase.auth();
+            auth.onAuthStateChanged(user => {
+                authStateChangedFired = true;
+                if (user) {
+                    logStatus(`تم تشغيل مراقب المصادقة. تم العثور على مستخدم (ID: ${user.uid.slice(0,10)}...).`, 'success');
+                } else {
+                    logStatus('تم تشغيل مراقب المصادقة. لا يوجد مستخدم مسجل حاليًا.', 'success');
+                }
+            });
+        } catch(e) {
+            logStatus(`فشل إعداد مراقب المصادقة: ${e.message}`, 'error');
+        }
+        
+        // 5. Final check after a timeout
+        setTimeout(() => {
+            if (authStateChangedFired) {
+                logStatus('التشخيص النهائي: مراقب المصادقة يعمل كما هو متوقع.', 'success');
+            } else {
+                logStatus('التشخيص النهائي: فشل تشغيل مراقب المصادقة بعد 10 ثوانٍ. هذه هي المشكلة الرئيسية.', 'error');
+                logStatus('الأسباب المحتملة: مشكلة في الشبكة، جدار حماية، أو إعدادات خاطئة في Authorized Domains.', 'info');
+            }
+        }, 10000);
+
     </script>
 </body>
-                        </html>
+</html>
