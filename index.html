@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المصروفات الذكية</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3B82F6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="إدارة المصروفات">
+    
+    <!-- Enhanced Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Enhanced Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- Enhanced Styles -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Enhanced Animations -->
+    <style>
+        @keyframes slideInUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideInDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fadeInScale {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+        
+        @keyframes shimmer {
+            0% {
+                background-position: -200px 0;
+            }
+            100% {
+                background-position: calc(200px + 100%) 0;
+            }
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 min-h-screen transition-all duration-500">
+    
+    <!-- Enhanced Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center z-50 transition-all duration-500">
+        <div class="text-center text-white">
+            <div class="relative mb-6">
+                <div class="w-20 h-20 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div>
+                <div class="absolute inset-0 w-20 h-20 border-4 border-transparent border-r-white/50 rounded-full animate-spin mx-auto" style="animation-delay: -0.5s;"></div>
+            </div>
+            <h2 class="text-2xl font-bold mb-2 animate-pulse">إدارة المصروفات الذكية</h2>
+            <p id="loadingText" class="text-lg opacity-90 animate-pulse">جاري التحميل...</p>
+            <div class="mt-4 flex justify-center space-x-2">
+                <div class="w-2 h-2 bg-white rounded-full animate-bounce"></div>
+                <div class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+                <div class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Offline Banner -->
+    <div id="offlineBanner" class="fixed top-0 left-0 right-0 bg-gradient-to-r from-orange-500 to-red-500 text-white text-center py-3 z-40 transform -translate-y-full transition-transform duration-300 shadow-lg">
+        <div class="flex items-center justify-center space-x-2">
+            <i data-lucide="wifi-off" class="w-5 h-5"></i>
+            <span class="font-medium">لا يوجد اتصال بالإنترنت</span>
+        </div>
+    </div>
+
+    <!-- Enhanced Authentication Screen -->
+    <div id="authScreen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 w-full max-w-md border border-white/20 dark:border-gray-700/20">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <i data-lucide="wallet" class="w-10 h-10 text-white"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">إدارة المصروفات</h1>
+                <p class="text-gray-600 dark:text-gray-300">تطبيق ذكي لإدارة مصروفاتك اليومية</p>
+            </div>
+            
+            <button id="signInBtn" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center space-x-3 group">
+                <i data-lucide="log-in" class="w-5 h-5 group-hover:rotate-12 transition-transform duration-300"></i>
+                <span>تسجيل الدخول بـ Google</span>
+            </button>
+            
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    بالمتابعة، أنت توافق على 
+                    <a href="#" class="text-blue-500 hover:text-blue-600 transition-colors">شروط الخدمة</a>
+                    و
+                    <a href="#" class="text-blue-500 hover:text-blue-600 transition-colors">سياسة الخصوصية</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Main App Screen -->
+    <div id="appScreen" class="hidden min-h-screen">
+        
+        <!-- Enhanced Header -->
+        <header class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-30 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <i data-lucide="wallet" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-800 dark:text-white">إدارة المصروفات</h1>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">مرحباً بك</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3">
+                        <!-- Dark Mode Toggle -->
+                        <button id="darkModeToggle" class="p-2 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300 group">
+                            <i data-lucide="sun" class="w-5 h-5 text-gray-600 dark:text-gray-300 group-hover:rotate-180 transition-transform duration-500"></i>
+                        </button>
+                        
+                        <!-- User Profile -->
+                        <div class="flex items-center space-x-2">
+                            <img id="userAvatar" src="" alt="User Avatar" class="w-10 h-10 rounded-full border-2 border-white shadow-lg">
+                            <div class="hidden sm:block">
+                                <p id="userName" class="text-sm font-medium text-gray-800 dark:text-white"></p>
+                                <p id="displayUserId" class="text-xs text-gray-500 dark:text-gray-400"></p>
+                            </div>
+                        </div>
+                        
+                        <!-- Settings Button -->
+                        <button id="settingsBtn" class="p-2 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300 group">
+                            <i data-lucide="settings" class="w-5 h-5 text-gray-600 dark:text-gray-300 group-hover:rotate-90 transition-transform duration-300"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Enhanced Navigation Tabs -->
+        <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 sticky top-16 z-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex space-x-8 overflow-x-auto">
+                    <button id="dailyTabBtn" class="tab-btn active flex items-center space-x-2 py-4 px-6 border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 font-medium whitespace-nowrap transition-all duration-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-t-lg">
+                        <i data-lucide="calendar-days" class="w-5 h-5"></i>
+                        <span>اليومية</span>
+                    </button>
+                    <button id="monthlyTabBtn" class="tab-btn flex items-center space-x-2 py-4 px-6 border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium whitespace-nowrap transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-700/20 rounded-t-lg">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                        <span>الشهرية</span>
+                    </button>
+                    <button id="categoriesTabBtn" class="tab-btn flex items-center space-x-2 py-4 px-6 border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium whitespace-nowrap transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-700/20 rounded-t-lg">
+                        <i data-lucide="tags" class="w-5 h-5"></i>
+                        <span>الفئات</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Enhanced Daily Page -->
+        <div id="dailyPage" class="page-content">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                
+                <!-- Enhanced Spinner Date Picker -->
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-xl p-6 mb-8 border border-white/20 dark:border-gray-700/20">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center space-x-2">
+                        <i data-lucide="calendar" class="w-6 h-6 text-blue-500"></i>
+                        <span>اختر التاريخ</span>
+                    </h2>
+                    
+                    <div id="spinnerDatePicker" class="flex justify-center items-center space-x-4 mb-6">
+                        <!-- Day Wheel -->
+                        <div class="date-wheel-container">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">اليوم</label>
+                            <div id="dayWheel" class="date-wheel">
+                                <div class="wheel-mask"></div>
+                                <div id="dayItems" class="wheel-items"></div>
+                                <div class="wheel-selector"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Month Wheel -->
+                        <div class="date-wheel-container">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">الشهر</label>
+                            <div id="monthWheel" class="date-wheel">
+                                <div class="wheel-mask"></div>
+                                <div id="monthItems" class="wheel-items"></div>
+                                <div class="wheel-selector"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Year Wheel -->
+                        <div class="date-wheel-container">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">السنة</label>
+                            <div id="yearWheel" class="date-wheel">
+                                <div class="wheel-mask"></div>
+                                <div id="yearItems" class="wheel-items"></div>
+                                <div class="wheel-selector"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <p id="selectedDateDisplay" class="text-lg font-semibold text-gray-800 dark:text-white bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent"></p>
+                    </div>
+                </div>
+
+                <!-- Enhanced Daily Summary -->
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-xl p-6 mb-8 border border-white/20 dark:border-gray-700/20">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center space-x-2">
+                            <i data-lucide="trending-up" class="w-5 h-5 text-green-500"></i>
+                            <span>إجمالي اليوم</span>
+                        </h3>
+                        <button id="openAddExpenseModal" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-2xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center space-x-2 group">
+                            <i data-lucide="plus" class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300"></i>
+                            <span>إضافة مصروف</span>
+                        </button>
+                    </div>
+                    <p id="currentDateTotal" class="text-3xl font-bold text-gray-800 dark:text-white">0.00 درهم</p>
+                </div>
+
+                <!-- Enhanced Expenses List -->
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 dark:border-gray-700/20">
+                    <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center space-x-2">
+                            <i data-lucide="list" class="w-5 h-5 text-blue-500"></i>
+                            <span>مصروفات اليوم</span>
+                        </h3>
+                    </div>
+                    
+                    <!-- Loading Skeleton -->
+                    <div id="dailyExpensesSkeleton" class="p-6 space-y-4">
+                        <div class="animate-pulse">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                                <div class="flex-1 space-y-2">
+                                    <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+                                    <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+                                </div>
+                                <div class="h-6 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Expenses List -->
+                    <div id="currentDateExpenseList" class="divide-y divide-gray-200/50 dark:divide-gray-700/50"></div>
+                    
+                    <!-- Empty State -->
+                    <div id="emptyDailyState" class="p-12 text-center">
+                        <div class="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full mx-auto mb-4 flex items-center justify-center">
+                            <i data-lucide="receipt" class="w-10 h-10 text-gray-400"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-800 dark:text-white mb-2">لا توجد مصروفات</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mb-6">ابدأ بإضافة أول مصروف لهذا اليوم</p>
+                        <button class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-2xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                            إضافة مصروف
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Monthly Page -->
+        <div id="monthlyPage" class="page-content hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                
+                <!-- Monthly Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-6 text-white shadow-xl">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">إجمالي الشهر</h3>
+                            <i data-lucide="trending-up" class="w-8 h-8 opacity-80"></i>
+                        </div>
+                        <p id="monthlyTotal" class="text-3xl font-bold">0.00 درهم</p>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-6 text-white shadow-xl">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">المتوسط اليومي</h3>
+                            <i data-lucide="calendar" class="w-8 h-8 opacity-80"></i>
+                        </div>
+                        <p id="dailyAverage" class="text-3xl font-bold">0.00 درهم</p>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-purple-500 to-pink-600 rounded-3xl p-6 text-white shadow-xl">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">أيام الإنفاق</h3>
+                            <i data-lucide="activity" class="w-8 h-8 opacity-80"></i>
+                        </div>
+                        <p id="daysRecorded" class="text-3xl font-bold">0 أيام</p>
+                    </div>
+                </div>
+
+                <!-- Top Categories -->
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 dark:border-gray-700/20">
+                    <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center space-x-2">
+                            <i data-lucide="pie-chart" class="w-5 h-5 text-blue-500"></i>
+                            <span>أهم الفئات</span>
+                        </h3>
+                    </div>
+                    
+                    <!-- Loading Skeleton -->
+                    <div id="monthlySummarySkeleton" class="p-6 space-y-4">
+                        <div class="animate-pulse space-y-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                                <div class="flex-1 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                                <div class="w-20 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Categories List -->
+                    <div id="topCategoriesList" class="p-6 space-y-4"></div>
+                    
+                    <!-- Empty State -->
+                    <div id="emptyCategoriesSummary" class="p-12 text-center">
+                        <div class="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full mx-auto mb-4 flex items-center justify-center">
+                            <i data-lucide="pie-chart" class="w-10 h-10 text-gray-400"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-800 dark:text-white mb-2">لا توجد بيانات</h3>
+                        <p class="text-gray-500 dark:text-gray-400">ابدأ بإضافة مصروفات لرؤية الإحصائيات</p>
+                    </div>
+                </div>
+
+                <!-- AI Analysis Section -->
+                <div class="mt-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 dark:border-gray-700/20">
+                    <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center space-x-2">
+                            <i data-lucide="brain" class="w-5 h-5 text-purple-500"></i>
+                            <span>تحليل ذكي للمصروفات</span>
+                        </h3>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div id="analysisPlaceholder" class="text-center">
+                            <button id="generateAnalysisBtn" class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-6 py-3 rounded-2xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center space-x-2 mx-auto">
+                                <i data-lucide="sparkles" class="w-5 h-5"></i>
+                                <span>إنشاء تحليل ذكي</span>
+                            </button>
+                        </div>
+                        
+                        <div id="llmAnalysisLoading" class="hidden text-center py-8">
+                            <div class="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-gray-600 dark:text-gray-400">جاري إنشاء التحليل الذكي...</p>
+                        </div>
+                        
+                        <div id="llmAnalysisOutput" class="hidden prose dark:prose-invert max-w-none"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Categories Page -->
+        <div id="categoriesPage" class="page-content hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                
+                <!-- Add Category Form -->
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-xl p-6 mb-8 border border-white/20 dark:border-gray-700/20">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center space-x-2">
+                        <i data-lucide="plus-circle" class="w-6 h-6 text-green-500"></i>
+                        <span>إضافة فئة جديدة</span>
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">اسم الفئة</label>
+                            <input id="categoryNameInput" type="text" placeholder="مثال: طعام، مواصلات" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm transition-all duration-300">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">اللون</label>
+                            <input id="categoryColorInput" type="color" value="#3B82F6" class="w-full h-12 border border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300">
+                        </div>
+                        
+                        <div class="flex items-end space-x-2">
+                            <button id="addCategoryBtn" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-2xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center space-x-2">
+                                <i data-lucide="plus" class="w-5 h-5"></i>
+                                <span>إضافة</span>
+                            </button>
+                            <button id="cancelCategoryEditBtn" class="hidden px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300">
+                                إلغاء
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Categories List -->
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 dark:border-gray-700/20">
+                    <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center space-x-2">
+                            <i data-lucide="tags" class="w-5 h-5 text-blue-500"></i>
+                            <span>الفئات المحفوظة</span>
+                        </h3>
+                    </div>
+                    
+                    <!-- Loading Skeleton -->
+                    <div id="categoriesSkeleton" class="p-6 space-y-4">
+                        <div class="animate-pulse space-y-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                                <div class="flex-1 space-y-2">
+                                    <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/4"></div>
+                                    <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/6"></div>
+                                </div>
+                                <div class="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Categories Grid -->
+                    <div id="userCategoriesList" class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                    
+                    <!-- Empty State -->
+                    <div id="emptyCategoriesState" class="p-12 text-center">
+                        <div class="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full mx-auto mb-4 flex items-center justify-center">
+                            <i data-lucide="tags" class="w-10 h-10 text-gray-400"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-800 dark:text-white mb-2">لا توجد فئات</h3>
+                        <p class="text-gray-500 dark:text-gray-400">ابدأ بإضافة فئات لتنظيم مصروفاتك</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Settings Page -->
+        <div id="settingsPage" class="page-content hidden">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                
+                <!-- User Profile Section -->
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-xl p-6 mb-8 border border-white/20 dark:border-gray-700/20">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center space-x-2">
+                        <i data-lucide="user" class="w-6 h-6 text-blue-500"></i>
+                        <span>الملف الشخصي</span>
+                    </h2>
+                    
+                    <div class="flex items-center space-x-4">
+                        <img id="settingsUserAvatar" src="" alt="User Avatar" class="w-16 h-16 rounded-full border-4 border-white shadow-lg">
+                        <div>
+                            <h3 id="settingsUserName" class="text-lg font-semibold text-gray-800 dark:text-white"></h3>
+                            <p id="settingsUserEmail" class="text-gray-600 dark:text-gray-400"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Management Section -->
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-xl p-6 mb-8 border border-white/20 dark:border-gray-700/20">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center space-x-2">
+                        <i data-lucide="database" class="w-6 h-6 text-green-500"></i>
+                        <span>إدارة البيانات</span>
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button id="exportDataBtn" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-4 rounded-2xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center space-x-2">
+                            <i data-lucide="download" class="w-5 h-5"></i>
+                            <span>تصدير البيانات</span>
+                        </button>
+                        
+                        <button id="importDataBtn" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-4 rounded-2xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center space-x-2">
+                            <i data-lucide="upload" class="w-5 h-5"></i>
+                            <span>استيراد البيانات</span>
+                        </button>
+                        
+                        <button id="clearAllDataBtn" class="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-6 py-4 rounded-2xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center space-x-2">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            <span>مسح البيانات</span>
+                        </button>
+                    </div>
+                    
+                    <input type="file" id="importFileInput" accept=".json" class="hidden">
+                </div>
+
+                <!-- Sign Out Section -->
+                <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-xl p-6 border border-white/20 dark:border-gray-700/20">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center space-x-2">
+                        <i data-lucide="log-out" class="w-6 h-6 text-red-500"></i>
+                        <span>تسجيل الخروج</span>
+                    </h2>
+                    
+                    <button id="signOutBtn" class="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-8 py-4 rounded-2xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center space-x-2">
+                        <i data-lucide="log-out" class="w-5 h-5"></i>
+                        <span>تسجيل الخروج</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Floating Action Button -->
+        <button id="addExpenseFAB" class="fixed bottom-6 left-6 w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 hover:shadow-3xl flex items-center justify-center z-20 group">
+            <i data-lucide="plus" class="w-8 h-8 group-hover:rotate-90 transition-transform duration-300"></i>
+        </button>
+    </div>
+
+    <!-- Enhanced Expense Modal -->
+    <div id="expenseModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md border border-white/20 dark:border-gray-700/20 transform transition-all duration-300 scale-95 opacity-0">
+            <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+                <h2 id="expenseModalTitle" class="text-xl font-bold text-gray-800 dark:text-white flex items-center space-x-2">
+                    <i data-lucide="plus-circle" class="w-6 h-6 text-green-500"></i>
+                    <span>إضافة مصروف جديد</span>
+                </h2>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <!-- Product Name -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">اسم المنتج</label>
+                    <input id="modalProductName" type="text" placeholder="مثال: قهوة، بنزين، فاتورة كهرباء" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm transition-all duration-300">
+                </div>
+                
+                <!-- Price -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">السعر (درهم)</label>
+                    <input id="modalProductPrice" type="number" step="0.01" placeholder="0.00" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm transition-all duration-300">
+                </div>
+                
+                <!-- Date Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">التاريخ</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <select id="modalDaySelect" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm transition-all duration-300">
+                            <!-- Days will be populated by JavaScript -->
+                        </select>
+                        <select id="modalMonthSelect" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm transition-all duration-300">
+                            <!-- Months will be populated by JavaScript -->
+                        </select>
+                        <select id="modalYearSelect" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm transition-all duration-300">
+                            <!-- Years will be populated by JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Category Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الفئة</label>
+                    <div id="categoryButtonsContainer" class="grid grid-cols-2 gap-2">
+                        <!-- Category buttons will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200/50 dark:border-gray-700/50 flex space-x-3">
+                <button id="saveExpenseBtn" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-2xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center space-x-2">
+                    <i data-lucide="check" class="w-5 h-5"></i>
+                    <span>حفظ</span>
+                </button>
+                <button id="cancelExpenseModalBtn" class="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Confirmation Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md border border-white/20 dark:border-gray-700/20">
+            <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+                <h2 id="confirmModalTitle" class="text-xl font-bold text-gray-800 dark:text-white flex items-center space-x-2">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-orange-500"></i>
+                    <span>تأكيد العملية</span>
+                </h2>
+            </div>
+            
+            <div class="p-6">
+                <p id="confirmModalMessage" class="text-gray-600 dark:text-gray-400"></p>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200/50 dark:border-gray-700/50 flex space-x-3">
+                <button id="confirmModalYes" class="flex-1 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-6 py-3 rounded-2xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                    نعم
+                </button>
+                <button id="confirmModalNo" class="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Toast Message -->
+    <div id="toastMessage" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-2xl shadow-2xl transform translate-x-full transition-all duration-300 z-50 max-w-sm">
+        <div class="flex items-center space-x-3">
+            <div class="toast-icon">
+                <i data-lucide="check-circle" class="w-5 h-5"></i>
+            </div>
+            <span class="toast-text font-medium"></span>
+        </div>
+        <div class="toast-progress absolute bottom-0 left-0 h-1 bg-white/30 rounded-full"></div>
+    </div>
+
+    <!-- Enhanced Scripts -->
+    <script type="module" src="app.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
+
