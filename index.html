@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المصروفات الذكية</title>
+
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" id="theme-color-meta" content="#ffffff">
+    <meta name="description" content="تطبيق ذكي لإدارة مصروفاتك اليومية بسهولة وفعالية.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+    <div id="app-container">
+        <!-- Screens are managed by JS -->
+    </div>
+
+    <!-- Templates for Dynamic Pages -->
+    <template id="loading-template">
+        <div class="screen active">
+            <div class="spinner"></div>
+            <p>جاري التحميل...</p>
+        </div>
+    </template>
+
+    <template id="auth-template">
+        <div class="screen active" id="auth-screen">
+            <div class="auth-card">
+                <div class="logo"><i data-lucide="wallet"></i></div>
+                <h1>المصروفات الذكية</h1>
+                <p>تتبع نفقاتك بسهولة وأناقة.</p>
+                <div class="auth-buttons">
+                    <button id="google-signin-btn" class="btn btn-primary"><i data-lucide="log-in"></i><span>تسجيل الدخول بـ Google</span></button>
+                    <button id="anon-signin-btn" class="btn btn-secondary"><i data-lucide="user-x"></i><span>التصفح كمجهول</span></button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="main-app-template">
+        <div class="screen active" id="main-app">
+            <header class="app-header">
+                <div class="user-profile">
+                    <img id="user-avatar" alt="User Avatar">
+                    <div>
+                        <h2 id="user-name"></h2>
+                        <p id="user-email"></p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button id="theme-toggle-btn" class="btn-icon"><i data-lucide="sun"></i></button>
+                </div>
+            </header>
+            <main id="main-content"></main>
+            <nav class="app-nav">
+                <button class="nav-btn active" data-page="daily"><i data-lucide="calendar-day"></i><span>يومي</span></button>
+                <button class="nav-btn" data-page="monthly"><i data-lucide="bar-chart-3"></i><span>شهري</span></button>
+                <button id="fab-add-expense" class="nav-fab"><i data-lucide="plus"></i></button>
+                <button class="nav-btn" data-page="categories"><i data-lucide="tags"></i><span>فئات</span></button>
+                <button class="nav-btn" data-page="settings"><i data-lucide="settings"></i><span>إعدادات</span></button>
+            </nav>
+        </div>
+    </template>
+
+    <!-- Modals, Toast, and Offline Indicator -->
+    <div id="modal-backdrop" class="hidden">
+        <div id="expense-modal" class="modal hidden">
+            <h3 id="expense-modal-title"></h3>
+            <div class="form-group"><label for="expense-name">اسم المصروف</label><input type="text" id="expense-name" placeholder="مثال: قهوة صباحية"></div>
+            <div class="form-group"><label for="expense-amount">المبلغ</label><input type="number" id="expense-amount" placeholder="0.00"></div>
+            <div class="form-group"><label for="expense-category">الفئة</label><select id="expense-category"></select></div>
+            <div class="modal-actions">
+                <button id="save-expense-btn" class="btn btn-primary">حفظ</button>
+                <button class="btn btn-secondary modal-cancel">إلغاء</button>
+            </div>
+        </div>
+        <div id="confirm-modal" class="modal hidden">
+             <h3 id="confirm-title"></h3><p id="confirm-message"></p>
+             <div class="modal-actions">
+                 <button id="confirm-yes-btn" class="btn btn-danger">نعم</button>
+                 <button class="btn btn-secondary modal-cancel">لا</button>
+             </div>
+        </div>
+    </div>
+    <div id="toast" class="hidden"><i id="toast-icon"></i><p id="toast-message"></p></div>
+    <div id="offline-indicator" class="hidden"><i data-lucide="wifi-off"></i><span>أنت غير متصل بالإنترنت</span></div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- Main App Script -->
+    <script type="module" src="./app.js"></script>
+    <!-- PWA Service Worker -->
+    <script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js')); }</script>
+</body>
+</html>
