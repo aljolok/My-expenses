@@ -3,106 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تشخيص اتصال Firebase</title>
+    <title>المصروفات الذكية</title>
+    
+    <!-- Fonts, Icons, and Embedded Styles -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
-        body { font-family: monospace; background-color: #111; color: #eee; padding: 20px; }
-        h1 { color: #ffc107; border-bottom: 1px solid #ffc107; padding-bottom: 10px; }
-        #log { list-style: none; padding: 0; }
-        #log li { padding: 8px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 10px; }
-        .success::before { content: '✅'; color: #28a745; }
-        .error::before { content: '❌'; color: #dc3545; }
-        .info::before { content: 'ℹ️'; color: #17a2b8; }
-        .pending::before { content: '⏳'; color: #ffc107; animation: spin 1s linear infinite; }
+        :root { --c-primary: #4f46e5; --c-primary-light: #6366f1; --c-primary-dark: #4338ca; --c-secondary: #f3f4f6; --c-text-primary: #111827; --c-text-secondary: #6b7280; --c-bg-primary: #ffffff; --c-bg-secondary: #f9fafb; --c-border: #e5e7eb; --c-success: #10b981; --c-danger: #ef4444; --c-warning: #f59e0b; --c-white: #ffffff; --c-black: #000000; --grad-primary: linear-gradient(135deg, var(--c-primary-light), var(--c-primary)); --grad-fab: linear-gradient(45deg, #f43f5e, #f97316); --grad-bg: linear-gradient(135deg, #f9fafb, #e5e7eb); --space-sm: 0.5rem; --space-md: 1rem; --space-lg: 1.5rem; --space-xl: 2.5rem; --font-main: 'Cairo', sans-serif; --fs-sm: 0.875rem; --fs-base: 1rem; --fs-lg: 1.125rem; --fs-xl: 1.5rem; --fs-2xl: 2rem; --radius-md: 0.5rem; --radius-lg: 1rem; --radius-full: 9999px; --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        [data-theme="dark"] { --c-primary: #6366f1; --c-primary-light: #818cf8; --c-primary-dark: #4f46e5; --c-secondary: #374151; --c-text-primary: #f9fafb; --c-text-secondary: #9ca3af; --c-bg-primary: #111827; --c-bg-secondary: #1f2937; --c-border: #374151; --grad-bg: linear-gradient(135deg, #1f2937, #111827); }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { -webkit-tap-highlight-color: transparent; }
+        body { font-family: var(--font-main); background: var(--grad-bg); color: var(--c-text-primary); transition: var(--transition); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        #app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; background-color: var(--c-bg-primary); position: relative; overflow-x: hidden; box-shadow: 0 0 40px rgba(0,0,0,0.1); }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; padding: var(--space-lg); transition: opacity 0.3s, transform 0.3s; }
+        .screen.active { display: flex; }
+        #main-app.screen { justify-content: flex-start; padding: 0; }
+        .app-header { width: 100%; padding: var(--space-md); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background-color: color-mix(in srgb, var(--c-bg-primary) 80%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--c-border); z-index: 10; }
+        #main-content { flex-grow: 1; width: 100%; overflow-y: auto; padding: var(--space-md); }
+        .app-nav { display: flex; justify-content: space-around; align-items: center; width: 100%; padding: var(--space-sm) 0; background-color: var(--c-bg-primary); border-top: 1px solid var(--c-border); position: sticky; bottom: 0; z-index: 10; box-shadow: 0 -5px 15px -3px rgba(0,0,0,0.05); }
+        .btn, .btn-icon, .nav-btn { border: none; cursor: pointer; font-family: inherit; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); transition: var(--transition); border-radius: var(--radius-md); }
+        .btn { padding: var(--space-sm) var(--space-md); }
+        .btn-primary { background: var(--grad-primary); color: var(--c-white); box-shadow: var(--shadow-md); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .btn-secondary { background-color: var(--c-secondary); color: var(--c-text-primary); }
+        .btn-icon { background: transparent; padding: var(--space-sm); border-radius: var(--radius-full); }
+        .nav-btn { flex-direction: column; gap: 0.25rem; font-size: var(--fs-sm); color: var(--c-text-secondary); background: transparent; padding: var(--space-sm); flex-grow: 1; position: relative; }
+        .nav-btn.active { color: var(--c-primary); }
+        .nav-fab { width: 60px; height: 60px; border-radius: var(--radius-full); background: var(--grad-fab); color: var(--c-white); box-shadow: var(--shadow-lg); display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transform: translateY(-20px); transition: var(--transition); flex-shrink: 0; }
+        .auth-card { text-align: center; background-color: var(--c-bg-primary); padding: var(--space-xl); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 90%; max-width: 400px; }
+        .logo { width: 60px; height: 60px; background: var(--grad-primary); color: var(--c-white); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-md); }
+        .auth-buttons { display: flex; flex-direction: column; gap: var(--space-md); }
+        .user-profile { display: flex; align-items: center; gap: var(--space-md); }
+        #user-avatar { width: 40px; height: 40px; border-radius: var(--radius-full); object-fit: cover; background-color: var(--c-secondary); border: 2px solid var(--c-primary); }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--c-secondary); border-top-color: var(--c-primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <h1>صفحة التشخيص الفني</h1>
-    <p>هذه الصفحة تختبر الاتصال بخدمات Firebase. يرجى الانتظار 15 ثانية ثم أخذ لقطة شاشة وإرسالها.</p>
-    <ul id="log"></ul>
+
+    <!-- ======== App Container ======== -->
+    <div id="app-container">
+        <div id="loading-screen" class="screen active">
+            <div class="spinner"></div>
+            <p>جاري التحقق من حالة الدخول...</p>
+        </div>
+        <div id="auth-screen" class="screen">
+            <div class="auth-card">
+                <div class="logo"><i data-lucide="wallet"></i></div>
+                <h1>المصروفات الذكية</h1>
+                <p>تتبع نفقاتك بسهولة وأناقة.</p>
+                <div class="auth-buttons">
+                    <button id="google-signin-btn" class="btn btn-primary"><i data-lucide="log-in"></i><span>تسجيل الدخول بـ Google</span></button>
+                    <button id="anon-signin-btn" class="btn btn-secondary"><i data-lucide="user-x"></i><span>التصفح كمجهول</span></button>
+                </div>
+            </div>
+        </div>
+        <div id="main-app" class="screen">
+            <header class="app-header">
+                <div class="user-profile">
+                    <img id="user-avatar" alt="User Avatar">
+                    <div>
+                        <h2 id="user-name"></h2>
+                        <p id="user-email"></p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button id="theme-toggle-btn" class="btn-icon"><i data-lucide="sun"></i></button>
+                    <button id="logout-btn" class="btn-icon"><i data-lucide="log-out"></i></button>
+                </div>
+            </header>
+            <main id="main-content">
+                <!-- Content will be rendered here -->
+            </main>
+            <nav class="app-nav">
+                 <!-- Nav buttons can be added here if needed -->
+            </nav>
+        </div>
+    </div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- Diagnostic Script -->
+    <!-- App Script (Embedded and Hyper-Simplified) -->
     <script>
-        const logContainer = document.getElementById('log');
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingScreen = document.getElementById('loading-screen');
+            const authScreen = document.getElementById('auth-screen');
+            const mainAppScreen = document.getElementById('main-app');
+            const loadingText = document.querySelector('#loading-screen p');
 
-        function logStatus(message, status = 'info') {
-            const li = document.createElement('li');
-            li.className = status;
-            li.textContent = message;
-            logContainer.appendChild(li);
-        }
+            // Helper to show only one screen at a time
+            function showScreen(screenId) {
+                loadingScreen.style.display = 'none';
+                authScreen.style.display = 'none';
+                mainAppScreen.style.display = 'none';
 
-        logStatus('بدء تشغيل سكربت التشخيص...', 'info');
-
-        // 1. Check if the global firebase object is loaded
-        if (typeof firebase !== 'undefined') {
-            logStatus('تم تحميل مكتبة Firebase الرئيسية بنجاح.', 'success');
-        } else {
-            logStatus('فشل تحميل مكتبة Firebase الرئيسية. تحقق من اتصال الإنترنت أو وجود أدوات حظر.', 'error');
-        }
-
-        // 2. Try to initialize the Firebase app
-        try {
-            const firebaseConfig = {
-                apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ",
-                authDomain: "my-expenses-81714.firebaseapp.com",
-                projectId: "my-expenses-81714",
-                storageBucket: "my-expenses-81714.firebasestorage.app",
-                messagingSenderId: "672207051964",
-                appId: "1:672207051964:web:b6e0cedc143bd06fd584b9",
-                measurementId: "G-YBTY3QD4YQ"
-            };
-            firebase.initializeApp(firebaseConfig);
-            logStatus('تم تهيئة تطبيق Firebase بنجاح (initializeApp).', 'success');
-        } catch (e) {
-            logStatus(`فشل تهيئة تطبيق Firebase: ${e.message}`, 'error');
-        }
-
-        // 3. Check for Auth and Firestore services
-        if (firebase && typeof firebase.auth === 'function') {
-            logStatus('تم العثور على خدمة المصادقة (firebase.auth).', 'success');
-        } else {
-            logStatus('لم يتم العثور على خدمة المصادقة. قد يكون هناك فشل في تحميل السكربت.', 'error');
-        }
-
-        if (firebase && typeof firebase.firestore === 'function') {
-            logStatus('تم العثور على خدمة Firestore (firebase.firestore).', 'success');
-        } else {
-            logStatus('لم يتم العثور على خدمة Firestore. قد يكون هناك فشل في تحميل السكربت.', 'error');
-        }
-
-        // 4. Try to use the Auth service and set up the listener
-        logStatus('محاولة إعداد مراقب حالة المصادقة (onAuthStateChanged)...', 'pending');
-        let authStateChangedFired = false;
-        try {
-            const auth = firebase.auth();
-            auth.onAuthStateChanged(user => {
-                authStateChangedFired = true;
-                if (user) {
-                    logStatus(`تم تشغيل مراقب المصادقة. تم العثور على مستخدم (ID: ${user.uid.slice(0,10)}...).`, 'success');
-                } else {
-                    logStatus('تم تشغيل مراقب المصادقة. لا يوجد مستخدم مسجل حاليًا.', 'success');
+                const screenToShow = document.getElementById(screenId);
+                if (screenToShow) {
+                    screenToShow.style.display = 'flex';
                 }
-            });
-        } catch(e) {
-            logStatus(`فشل إعداد مراقب المصادقة: ${e.message}`, 'error');
-        }
-        
-        // 5. Final check after a timeout
-        setTimeout(() => {
-            if (authStateChangedFired) {
-                logStatus('التشخيص النهائي: مراقب المصادقة يعمل كما هو متوقع.', 'success');
-            } else {
-                logStatus('التشخيص النهائي: فشل تشغيل مراقب المصادقة بعد 10 ثوانٍ. هذه هي المشكلة الرئيسية.', 'error');
-                logStatus('الأسباب المحتملة: مشكلة في الشبكة، جدار حماية، أو إعدادات خاطئة في Authorized Domains.', 'info');
             }
-        }, 10000);
+            
+            // Safety timeout
+            const authTimeout = setTimeout(() => {
+                loadingText.textContent = "فشل الاتصال بالخادم. يرجى تحديث الصفحة.";
+            }, 10000);
 
+            try {
+                // Initialize Firebase
+                const firebaseConfig = {
+                    apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ",
+                    authDomain: "my-expenses-81714.firebaseapp.com",
+                    projectId: "my-expenses-81714",
+                    storageBucket: "my-expenses-81714.firebasestorage.app",
+                    messagingSenderId: "672207051964",
+                    appId: "1:672207051964:web:b6e0cedc143bd06fd584b9",
+                    measurementId: "G-YBTY3QD4YQ"
+                };
+                firebase.initializeApp(firebaseConfig);
+                const auth = firebase.auth();
+
+                // The most important part: The Auth State Listener
+                auth.onAuthStateChanged(user => {
+                    clearTimeout(authTimeout); // Authentication check is complete, cancel the timeout
+
+                    if (user) {
+                        // User is signed in.
+                        const userAvatar = document.getElementById('user-avatar');
+                        const userName = document.getElementById('user-name');
+                        const userEmail = document.getElementById('user-email');
+                        
+                        userAvatar.src = user.photoURL || `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xOCAyMHYtMWMwLTIuMi0xLjgtNC00LTRoLTRjLTIuMiAwLTQgMS44LTQgNHYxIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSI3IiByPSI0Ii8+PC9zdmc+`;
+                        userName.textContent = user.isAnonymous ? 'مستخدم مجهول' : (user.displayName || 'مستخدم جديد');
+                        userEmail.textContent = user.isAnonymous ? `ID: ${user.uid.slice(0, 6)}...` : user.email;
+                        
+                        document.getElementById('main-content').innerHTML = `<h1>أهلاً بك!</h1><p>لقد نجحت في تسجيل الدخول. التطبيق جاهز الآن للبناء عليه.</p>`;
+
+                        showScreen('main-app');
+                    } else {
+                        // User is signed out.
+                        showScreen('auth-screen');
+                    }
+                });
+
+                // Setup Sign-in buttons
+                document.getElementById('google-signin-btn').addEventListener('click', () => {
+                    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => console.error(err));
+                });
+                document.getElementById('anon-signin-btn').addEventListener('click', () => {
+                    auth.signInAnonymously().catch(err => console.error(err));
+                });
+                document.getElementById('logout-btn').addEventListener('click', () => {
+                    auth.signOut();
+                });
+                
+                lucide.createIcons(); // Initialize icons
+
+            } catch (error) {
+                console.error("Critical Error:", error);
+                loadingText.textContent = "حدث خطأ فادح. لا يمكن تشغيل التطبيق.";
+            }
+        });
     </script>
 </body>
 </html>
