@@ -118,6 +118,21 @@
                         لا توجد بيانات للفئات لهذا الشهر.
                     </div>
                 </div>
+                <!-- New section for LLM-powered spending analysis -->
+                <div class="summary-card mt-6">
+                    <h3 class="text-xl font-semibold mb-3 flex items-center"><i data-lucide="gem" class="inline-block align-middle ml-2 w-6 h-6 text-purple-600"></i> رؤى وتحليلات ✨</h3>
+                    <p class="text-gray-600 mb-4 text-center" id="analysisPlaceholder">انقر على الزر أدناه للحصول على تحليل مخصص لإنفاقك الشهري ونصائح.</p>
+                    <div id="llmAnalysisOutput" class="text-gray-700 leading-relaxed space-y-3 hidden">
+                        <!-- LLM generated analysis will go here -->
+                    </div>
+                    <div id="llmAnalysisLoading" class="hidden flex justify-center items-center py-4">
+                        <div class="spinner w-8 h-8"></div>
+                        <p class="text-blue-500 mr-2">جاري تحليل بياناتك...</p>
+                    </div>
+                    <button id="generateAnalysisBtn" class="mt-4 w-full py-3 text-lg bg-purple-600 hover:bg-purple-700 text-white rounded-xl flex items-center justify-center gap-2">
+                        <i data-lucide="sparkles" class="w-6 h-6"></i> تحليل الإنفاق ✨
+                    </button>
+                </div>
             </div>
         </div>
 
