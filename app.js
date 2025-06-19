@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// Firebase Configuration (YOUR CONFIGURATION IS NOW HARDCODED HERE)
+// Firebase Configuration (YOUR CONFIGURATION IS HARDCODED HERE)
 const firebaseConfig = {
   apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ",
   authDomain: "my-expenses-81714.firebaseapp.com",
@@ -32,6 +32,7 @@ const appState = {
     currentTab: 'daily',
     isAuthReady: false,
     isOffline: !navigator.onLine,
+    selectedCategoryIdForExpense: null, // Track selected category in modal
     defaultCategories: { // Hardcoded default categories as fallback
         'طعام': { name: 'طعام', color: '#EF4444' }, // Red
         'مواصلات': { name: 'مواصلات', color: '#3B82F6' }, // Blue
@@ -41,11 +42,15 @@ const appState = {
         'ترفيه': { name: 'ترفيه', color: '#EC4899' }, // Pink
         'أخرى': { name: 'أخرى', color: '#6B7280' } // Gray
     },
-    // Random color generation for new categories
+    // Random color generation for new categories (if user doesn't pick one)
     categoryColors: [
         '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16', '#22C55E', '#10B981',
         '#06B6D4', '#0EA5E9', '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7', '#D946EF',
         '#EC4899', '#F43F5E'
+    ],
+    monthNames: [
+        'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
     ]
 };
 
@@ -54,23 +59,24 @@ const loadingOverlay = document.getElementById('loadingOverlay');
 const loadingText = document.getElementById('loadingText');
 const authScreen = document.getElementById('authScreen');
 const appScreen = document.getElementById('appScreen');
-const signInBtn = document.getElementById('signInBtn'); // Changed from googleSignInBtn
-const settingsBtn = document.getElementById('settingsBtn'); // New settings button
+const signInBtn = document.getElementById('signInBtn');
+const settingsBtn = document.getElementById('settingsBtn');
 const signOutBtn = document.getElementById('signOutBtn');
 const userAvatar = document.getElementById('userAvatar');
 const userName = document.getElementById('userName');
-const displayUserId = document.getElementById('displayUserId'); // To display UID
+const displayUserId = document.getElementById('displayUserId');
 
 const dailyTabBtn = document.getElementById('dailyTabBtn');
 const monthlyTabBtn = document.getElementById('monthlyTabBtn');
-const categoriesTabBtn = document.getElementById('categoriesTabBtn'); // New tab
+const categoriesTabBtn = document.getElementById('categoriesTabBtn');
 const dailyPage = document.getElementById('dailyPage');
 const monthlyPage = document.getElementById('monthlyPage');
-const categoriesPage = document.getElementById('categoriesPage'); // New page
-const settingsPage = document.getElementById('settingsPage'); // New page
+const categoriesPage = document.getElementById('categoriesPage');
+const settingsPage = document.getElementById('settingsPage');
 
-const expenseDateInput = document.getElementById('expenseDate'); // Date input on daily page
-const addExpenseFAB = document.getElementById('addExpenseFAB'); // Floating Action Button for adding expense
+const openAddExpenseModalBtn = document.getElementById('openAddExpenseModal'); // New button to open modal
+const expenseDateInput = document.getElementById('expenseDate'); // This is no longer used for input, but for display
+const addExpenseFAB = document.getElementById('addExpenseFAB');
 const currentDateExpenseList = document.getElementById('currentDateExpenseList');
 const selectedDateDisplay = document.getElementById('selectedDateDisplay');
 const currentDateTotalDisplay = document.getElementById('currentDateTotal');
@@ -85,14 +91,13 @@ const monthlySummarySkeleton = document.getElementById('monthlySummarySkeleton')
 const monthlyContent = document.getElementById('monthlyContent');
 const emptyCategoriesSummary = document.getElementById('emptyCategoriesSummary');
 
-
 const categoryNameInput = document.getElementById('categoryNameInput');
+const categoryColorInput = document.getElementById('categoryColorInput'); // New color input
 const addCategoryBtn = document.getElementById('addCategoryBtn');
 const cancelCategoryEditBtn = document.getElementById('cancelCategoryEditBtn');
 const userCategoriesList = document.getElementById('userCategoriesList');
 const emptyCategoriesState = document.getElementById('emptyCategoriesState');
 const categoriesSkeleton = document.getElementById('categoriesSkeleton');
-
 
 const exportDataBtn = document.getElementById('exportDataBtn');
 const importDataBtn = document.getElementById('importDataBtn');
@@ -103,10 +108,12 @@ const toastMessageElement = document.getElementById('toastMessage');
 // Expense Modal Elements
 const expenseModal = document.getElementById('expenseModal');
 const expenseModalTitle = document.getElementById('expenseModalTitle');
-const modalExpenseDateInput = document.getElementById('modalExpenseDate');
+const modalDaySelect = document.getElementById('modalDaySelect');     // New date picker wheel
+const modalMonthSelect = document.getElementById('modalMonthSelect'); // New date picker wheel
+const modalYearSelect = document.getElementById('modalYearSelect');   // New date picker wheel
 const modalProductNameInput = document.getElementById('modalProductName');
 const modalProductPriceInput = document.getElementById('modalProductPrice');
-const modalCategorySelect = document.getElementById('modalCategorySelect');
+const categoryButtonsContainer = document.getElementById('categoryButtonsContainer'); // New container for category buttons
 const saveExpenseBtn = document.getElementById('saveExpenseBtn');
 const cancelExpenseModalBtn = document.getElementById('cancelExpenseModalBtn');
 
@@ -116,7 +123,7 @@ const confirmModalTitle = document.getElementById('confirmModalTitle');
 const confirmModalMessage = document.getElementById('confirmModalMessage');
 const confirmModalYes = document.getElementById('confirmModalYes');
 const confirmModalNo = document.getElementById('confirmModalNo');
-let confirmModalResolve; // To store the promise resolve function for the confirm modal
+let confirmModalResolve;
 
 // Settings page elements
 const settingsUserAvatar = document.getElementById('settingsUserAvatar');
@@ -181,16 +188,18 @@ function handleConfirmNo() {
 }
 
 /**
- * Gets a date string in 'YYYY-MM-DD' format.
- * @param {Date} date The date object.
+ * Gets a date string in 'YYYY-MM-DD' format from the date picker wheels.
+ * @param {number} day The selected day.
+ * @param {number} month The selected month (0-indexed).
+ * @param {number} year The selected year.
  * @returns {string} Formatted date string.
  */
-function getDateString(date) {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+function getDateStringFromWheels(day, month, year) {
+    const d = new Date(year, month, day);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
 }
 
 /**
@@ -203,36 +212,33 @@ function formatCurrency(amount) {
 }
 
 /**
- * Suggests a category based on product name. Prioritizes user's custom categories.
+ * Suggests a category ID based on product name. Prioritizes user's custom categories.
  * @param {string} productName The name of the product.
- * @returns {string} The suggested category name.
+ * @returns {string|null} The suggested category ID, or null if only a default category name is matched.
  */
 function suggestCategory(productName) {
     const lowerProductName = productName.toLowerCase();
     // First, try to match with user-defined categories
     for (const categoryId in appState.categories) {
         const category = appState.categories[categoryId];
-        // For simplicity, matching directly with category name for now.
-        // Could expand this to include keywords within category objects.
         if (lowerProductName.includes(category.name.toLowerCase())) {
-            return category.name;
+            return categoryId; // Return custom category ID
         }
     }
 
     // If no user-defined category matches, fall back to default categories
-    for (const categoryName in appState.defaultCategories) {
-        // Here, you would implement more sophisticated keyword matching if needed
-        // For now, it's a simple check.
-        if (appState.defaultCategories[categoryName].name.toLowerCase() === lowerProductName ||
-            (lowerProductName.includes('قهوة') && categoryName === 'طعام') || // Example: coffee is food
-            (lowerProductName.includes('فاتورة') && categoryName === 'فواتير') // Example: bill is bills
-        ) {
-            return appState.defaultCategories[categoryName].name;
-        }
-    }
-
-    return 'أخرى'; // Default to 'Other' if no match
+    // This part is simplified; in a real app, you'd have keywords for defaults too.
+    if (lowerProductName.includes('قهوة') || lowerProductName.includes('طعام')) return 'طعام';
+    if (lowerProductName.includes('بنزين') || lowerProductName.includes('مواصلات')) return 'مواصلات';
+    if (lowerProductName.includes('فاتورة') || lowerProductName.includes('كهرباء')) return 'فواتير';
+    if (lowerProductName.includes('ملابس') || lowerProductName.includes('تسوق')) return 'تسوق';
+    if (lowerProductName.includes('دواء') || lowerProductName.includes('صحة')) return 'صحة';
+    if (lowerProductName.includes('سينما') || lowerProductName.includes('ترفيه')) return 'ترفيه';
+    
+    // Return the name of the 'أخرى' default category as a fallback, as it won't have an ID
+    return 'أخرى';
 }
+
 
 /**
  * Gets a random color from the predefined list.
@@ -304,7 +310,7 @@ function switchTab(tabName) {
  * Renders expenses for the currently selected date.
  */
 function renderCurrentDateExpenses() {
-    const selectedDate = expenseDateInput.value;
+    const selectedDate = expenseDateInput.value; // Still using this for display date
     selectedDateDisplay.textContent = new Date(selectedDate).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     dailyExpensesSkeleton.classList.remove('hidden');
@@ -321,13 +327,13 @@ function renderCurrentDateExpenses() {
     } else {
         expensesForDate.forEach(exp => {
             total += exp.price;
-            const item = document.createElement('div');
-            item.className = 'expense-item';
-            item.dataset.id = exp.id;
-
+            // Determine category info (custom first, then default fallback)
             const categoryInfo = appState.categories[exp.categoryId] || appState.defaultCategories[exp.category] || appState.defaultCategories['أخرى'];
             const categoryBadgeStyle = `background-color: ${categoryInfo.color}; color: ${getContrastColor(categoryInfo.color)};`;
 
+            const item = document.createElement('div');
+            item.className = 'expense-item';
+            item.dataset.id = exp.id;
             item.innerHTML = `
                 <div class="name">${exp.name}</div>
                 <div class="details flex items-center">
@@ -392,8 +398,10 @@ function updateMonthlySummary() {
         Object.entries(categoryTotals)
             .sort(([, a], [, b]) => b - a)
             .forEach(([categoryName, total]) => {
-                const li = document.createElement('li');
+                // Find the color for the category (custom first, then default)
                 const categoryColor = Object.values(appState.categories).find(cat => cat.name === categoryName)?.color || appState.defaultCategories[categoryName]?.color || appState.defaultCategories['أخرى'].color;
+                const textColor = getContrastColor(categoryColor); // Get contrast for text
+                const li = document.createElement('li');
                 li.innerHTML = `
                     <span class="flex items-center">
                         <span class="w-3 h-3 rounded-full mr-2" style="background-color: ${categoryColor};"></span>
@@ -410,6 +418,163 @@ function updateMonthlySummary() {
 }
 
 /**
+ * Populates the day select element based on the selected month and year.
+ */
+function populateDaySelect() {
+    const selectedMonth = parseInt(modalMonthSelect.value);
+    const selectedYear = parseInt(modalYearSelect.value);
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate(); // Get last day of the month
+
+    const currentDay = parseInt(modalDaySelect.value) || new Date().getDate(); // Keep current day or default to today
+
+    modalDaySelect.innerHTML = '';
+    for (let i = 1; i <= daysInMonth; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = i;
+        if (i === currentDay) {
+            option.selected = true;
+        }
+        modalDaySelect.appendChild(option);
+    }
+}
+
+/**
+ * Populates the month select element.
+ */
+function populateMonthSelect() {
+    modalMonthSelect.innerHTML = '';
+    const currentMonth = parseInt(modalMonthSelect.value) || new Date().getMonth(); // Keep current month or default to today
+
+    appState.monthNames.forEach((name, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = name;
+        if (index === currentMonth) {
+            option.selected = true;
+        }
+        modalMonthSelect.appendChild(option);
+    });
+}
+
+/**
+ * Populates the year select element.
+ */
+function populateYearSelect() {
+    modalYearSelect.innerHTML = '';
+    const currentYear = parseInt(modalYearSelect.value) || new Date().getFullYear(); // Keep current year or default to today
+    const startYear = currentYear - 5; // 5 years back
+    const endYear = currentYear + 5;   // 5 years forward
+
+    for (let year = startYear; year <= endYear; year++) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        if (year === currentYear) {
+            option.selected = true;
+        }
+        modalYearSelect.appendChild(option);
+    }
+}
+
+/**
+ * Initializes and updates the date picker wheels.
+ * @param {Date} dateToSet Optional Date object to pre-select the wheels.
+ */
+function initializeDateWheels(dateToSet = new Date()) {
+    populateYearSelect();
+    populateMonthSelect();
+    populateDaySelect(); // Populate days based on initially selected month/year
+
+    // Set values based on dateToSet
+    modalYearSelect.value = dateToSet.getFullYear();
+    modalMonthSelect.value = dateToSet.getMonth();
+    populateDaySelect(); // Re-populate days in case year/month changed
+    modalDaySelect.value = dateToSet.getDate();
+
+    // Add event listeners to update days when month or year changes
+    modalMonthSelect.removeEventListener('change', populateDaySelect); // Prevent duplicate listeners
+    modalMonthSelect.addEventListener('change', populateDaySelect);
+    modalYearSelect.removeEventListener('change', populateDaySelect);
+    modalYearSelect.addEventListener('change', populateDaySelect);
+}
+
+/**
+ * Renders the category buttons in the expense modal.
+ * @param {string|null} selectedCategoryId The ID of the category to be pre-selected.
+ * Can also be a default category name (e.g., 'أخرى').
+ */
+function renderCategoryButtons(selectedCategoryId) {
+    categoryButtonsContainer.innerHTML = ''; // Clear existing buttons
+
+    // Combine user-defined and default categories for display
+    const allCategories = [];
+    // Add user-defined categories first
+    Object.values(appState.categories).forEach(cat => allCategories.push({
+        id: cat.id,
+        name: cat.name,
+        color: cat.color,
+        isCustom: true // Flag to identify custom categories
+    }));
+    // Add 'Other' default category as an explicit button
+    allCategories.push({
+        id: 'أخرى',
+        name: 'أخرى',
+        color: appState.defaultCategories['أخرى'].color,
+        isCustom: false
+    });
+
+    // Sort categories alphabetically by name
+    allCategories.sort((a, b) => a.name.localeCompare(b.name));
+
+    appState.selectedCategoryIdForExpense = null; // Reset selection
+
+    allCategories.forEach(cat => {
+        const button = document.createElement('button');
+        button.type = 'button'; // Prevent form submission
+        button.className = 'category-button';
+        button.textContent = cat.name;
+        button.style.backgroundColor = cat.color;
+        button.style.color = getContrastColor(cat.color);
+        button.dataset.id = cat.id; // Store ID for custom, name for default 'أخرى'
+
+        // Check if this button should be pre-selected
+        if (selectedCategoryId) {
+            if (cat.isCustom && cat.id === selectedCategoryId) {
+                button.classList.add('selected');
+                appState.selectedCategoryIdForExpense = cat.id;
+            } else if (!cat.isCustom && cat.name === selectedCategoryId) { // For 'أخرى'
+                button.classList.add('selected');
+                appState.selectedCategoryIdForExpense = cat.name;
+            }
+        }
+
+        button.addEventListener('click', () => {
+            // Remove 'selected' from all other buttons
+            document.querySelectorAll('.category-button').forEach(btn => btn.classList.remove('selected'));
+            // Add 'selected' to the clicked button
+            button.classList.add('selected');
+            appState.selectedCategoryIdForExpense = button.dataset.id;
+        });
+        categoryButtonsContainer.appendChild(button);
+    });
+
+    // If no category was pre-selected (e.g., new expense), try to select 'أخرى'
+    if (!appState.selectedCategoryIdForExpense) {
+        const otherButton = categoryButtonsContainer.querySelector('[data-id="أخرى"]');
+        if (otherButton) {
+            otherButton.classList.add('selected');
+            appState.selectedCategoryIdForExpense = 'أخرى';
+        } else if (allCategories.length > 0) {
+            // If 'أخرى' isn't present for some reason, select the first one
+            categoryButtonsContainer.firstChild.classList.add('selected');
+            appState.selectedCategoryIdForExpense = categoryButtonsContainer.firstChild.dataset.id;
+        }
+    }
+}
+
+
+/**
  * Shows the expense modal for adding or editing an expense.
  * @param {object|null} expenseData The expense data to pre-fill the form, or null for a new expense.
  */
@@ -418,15 +583,22 @@ function showExpenseModal(expenseData = null) {
     appState.editingExpenseId = expenseData ? expenseData.id : null;
     expenseModalTitle.textContent = appState.isEditingExpense ? 'تعديل المصروف' : 'إضافة مصروف جديد';
 
-    modalExpenseDateInput.value = expenseData ? expenseData.date : getDateString(new Date());
+    // Initialize date wheels
+    if (expenseData) {
+        const expenseDate = new Date(expenseData.date);
+        initializeDateWheels(expenseDate);
+    } else {
+        initializeDateWheels(new Date()); // Default to today
+    }
+
     modalProductNameInput.value = expenseData ? expenseData.name : '';
     modalProductPriceInput.value = expenseData ? expenseData.price : '';
 
-    populateCategorySelect(expenseData ? (expenseData.categoryId || expenseData.category) : null); // Pre-select category
+    // Render category buttons
+    renderCategoryButtons(expenseData ? (expenseData.categoryId || expenseData.category) : null);
 
     expenseModal.classList.remove('hidden');
-    // Set focus to the first input in the modal for accessibility
-    modalExpenseDateInput.focus();
+    modalProductNameInput.focus(); // Focus on product name
 }
 
 /**
@@ -436,58 +608,12 @@ function hideExpenseModal() {
     expenseModal.classList.add('hidden');
     appState.isEditingExpense = false;
     appState.editingExpenseId = null;
+    appState.selectedCategoryIdForExpense = null; // Clear selected category
     modalProductNameInput.value = '';
     modalProductPriceInput.value = '';
-    modalExpenseDateInput.value = getDateString(new Date()); // Reset to current date
-    modalCategorySelect.innerHTML = ''; // Clear categories
+    initializeDateWheels(new Date()); // Reset date wheels to today
+    categoryButtonsContainer.innerHTML = ''; // Clear category buttons
 }
-
-/**
- * Populates the category select dropdown in the expense modal.
- * @param {string} selectedCategoryValue The ID or name of the category to pre-select.
- */
-function populateCategorySelect(selectedCategoryValue) {
-    modalCategorySelect.innerHTML = ''; // Clear existing options
-
-    const categoriesArray = Object.values(appState.categories).sort((a, b) => a.name.localeCompare(b.name));
-
-    // Add user-defined categories first
-    categoriesArray.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat.id; // Store category ID as value
-        option.textContent = cat.name;
-        if (selectedCategoryValue && (selectedCategoryValue === cat.id || selectedCategoryValue === cat.name)) {
-            option.selected = true;
-        }
-        modalCategorySelect.appendChild(option);
-    });
-
-    // Add a separator or 'Default Categories' heading if needed, then add default ones
-    const defaultOptionGroup = document.createElement('optgroup');
-    defaultOptionGroup.label = "الفئات الافتراضية";
-    Object.values(appState.defaultCategories).forEach(cat => {
-        // Skip default if a user-defined category with the same name exists
-        if (categoriesArray.some(userCat => userCat.name === cat.name)) {
-            return;
-        }
-        const option = document.createElement('option');
-        option.value = cat.name; // Use name for default categories
-        option.textContent = cat.name;
-        if (selectedCategoryValue && selectedCategoryValue === cat.name) {
-            option.selected = true;
-        }
-        defaultOptionGroup.appendChild(option);
-    });
-    modalCategorySelect.appendChild(defaultOptionGroup);
-
-    // If no category was selected, try to pre-select 'أخرى'
-    if (!selectedCategoryValue && modalCategorySelect.querySelector('option[value="أخرى"]')) {
-        modalCategorySelect.value = 'أخرى';
-    } else if (!selectedCategoryValue && modalCategorySelect.options.length > 0) {
-        modalCategorySelect.selectedIndex = 0; // Select the first available option
-    }
-}
-
 
 /**
  * Adds a new expense or updates an existing one.
@@ -495,8 +621,14 @@ function populateCategorySelect(selectedCategoryValue) {
 async function addOrUpdateExpense() {
     const name = modalProductNameInput.value.trim();
     const price = parseFloat(modalProductPriceInput.value);
-    const date = modalExpenseDateInput.value;
-    const selectedCategoryValue = modalCategorySelect.value;
+    
+    // Get date from wheels
+    const day = parseInt(modalDaySelect.value);
+    const month = parseInt(modalMonthSelect.value);
+    const year = parseInt(modalYearSelect.value);
+    const date = getDateStringFromWheels(day, month, year);
+
+    const selectedCategoryValue = appState.selectedCategoryIdForExpense;
 
     if (!name || isNaN(price) || price <= 0 || !date || !selectedCategoryValue) {
         showToast("الرجاء إدخال بيانات صحيحة لاسم المنتج، السعر، التاريخ والفئة.");
@@ -504,14 +636,14 @@ async function addOrUpdateExpense() {
     }
 
     let categoryId = selectedCategoryValue;
-    let categoryName = selectedCategoryValue; // Default to value, will be updated if it's an ID
+    let categoryName = selectedCategoryValue; // Default to value
 
     // Check if the selected value is an ID (user-defined category)
-    const foundCategory = Object.values(appState.categories).find(cat => cat.id === selectedCategoryValue);
+    const foundCategory = appState.categories[selectedCategoryValue];
     if (foundCategory) {
-        categoryName = foundCategory.name;
+        categoryName = foundCategory.name; // Use actual category name
     } else {
-        // It's a default category name
+        // It's a default category name (like 'أخرى')
         categoryId = null; // No specific ID for default categories
     }
 
@@ -519,8 +651,8 @@ async function addOrUpdateExpense() {
         name,
         price,
         date,
-        category: categoryName, // Store category name (for backwards compatibility/simplicity)
-        categoryId: categoryId, // Store category ID if it's a custom one
+        category: categoryName,
+        categoryId: categoryId,
         timestamp: new Date().getTime()
     };
 
@@ -731,6 +863,7 @@ function renderUserCategories() {
  */
 async function addOrUpdateCategory() {
     const name = categoryNameInput.value.trim();
+    const color = categoryColorInput.value; // Get the chosen color
     if (!name) {
         showToast("الرجاء إدخال اسم الفئة.");
         return;
@@ -740,7 +873,7 @@ async function addOrUpdateCategory() {
 
     try {
         if (appState.isEditingCategory) {
-            await updateDoc(doc(categoriesCollectionRef, appState.editingCategoryId), { name });
+            await updateDoc(doc(categoriesCollectionRef, appState.editingCategoryId), { name, color });
             showToast("تم تحديث الفئة بنجاح.");
         } else {
             // Check for duplicate category name before adding
@@ -752,7 +885,7 @@ async function addOrUpdateCategory() {
 
             await addDoc(categoriesCollectionRef, {
                 name: name,
-                color: getRandomCategoryColor(), // Assign a random color
+                color: color || getRandomCategoryColor(), // Use chosen color, fallback to random
                 timestamp: new Date().getTime()
             });
             showToast("تمت إضافة الفئة بنجاح.");
@@ -776,6 +909,7 @@ function editCategory(id) {
         appState.isEditingCategory = true;
         appState.editingCategoryId = id;
         categoryNameInput.value = category.name;
+        categoryColorInput.value = category.color; // Set the color input
         addCategoryBtn.innerHTML = `<i data-lucide="edit" class="inline-block align-middle ml-2"></i> تحديث`;
         cancelCategoryEditBtn.classList.remove('hidden');
         lucide.createIcons();
@@ -789,6 +923,7 @@ function cancelCategoryEdit() {
     appState.isEditingCategory = false;
     appState.editingCategoryId = null;
     categoryNameInput.value = '';
+    categoryColorInput.value = '#000000'; // Reset color picker to black
     addCategoryBtn.innerHTML = `<i data-lucide="plus" class="inline-block align-middle ml-2"></i> إضافة فئة`;
     cancelCategoryEditBtn.classList.add('hidden');
     lucide.createIcons();
@@ -884,7 +1019,6 @@ function updateOfflineStatus() {
  */
 function setupFirestoreListeners(uid) {
     // The appId for your Firebase project; for standalone use, you can get it from firebaseConfig.appId
-    // If you were in a Canvas environment that provides __app_id, you would use that.
     const appId = firebaseConfig.appId; 
 
     // Unsubscribe from previous listeners if they exist
@@ -899,12 +1033,15 @@ function setupFirestoreListeners(uid) {
     // Listen for real-time updates to expenses
     unsubscribeFromExpenses = onSnapshot(expensesCollectionRef, (snapshot) => {
         appState.expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Only render/update if the corresponding tab is active
+        // Only render/update if the corresponding tab is active or related modals are open
         if (appState.currentTab === 'daily') {
             renderCurrentDateExpenses();
         }
         if (appState.currentTab === 'monthly') {
             updateMonthlySummary();
+        }
+        if (!expenseModal.classList.contains('hidden')) { // Update category buttons if modal is open
+            renderCategoryButtons(appState.selectedCategoryIdForExpense);
         }
     }, (error) => {
         console.error("Error listening to expenses:", error);
@@ -917,13 +1054,16 @@ function setupFirestoreListeners(uid) {
         snapshot.docs.forEach(doc => {
             appState.categories[doc.id] = { id: doc.id, ...doc.data() };
         });
-        // Only render/update if the corresponding tab is active
+        // Only render/update if the corresponding tab is active or related modals are open
         if (appState.currentTab === 'categories') {
             renderUserCategories();
         }
-        // Also update modal category select if open
-        if (!expenseModal.classList.contains('hidden')) {
-            populateCategorySelect(modalCategorySelect.value); // Re-populate, keeping current selection if possible
+        if (!expenseModal.classList.contains('hidden')) { // Update category buttons if modal is open
+            renderCategoryButtons(appState.selectedCategoryIdForExpense);
+        }
+        // Also update monthly summary as categories affect its display
+        if (appState.currentTab === 'monthly') {
+            updateMonthlySummary();
         }
     }, (error) => {
         console.error("Error listening to categories:", error);
@@ -975,7 +1115,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         auth = getAuth(app);
         db = getFirestore(app);
 
-        // Check if API key is valid (simple check)
+        // Basic check for API key
         if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {
             toggleLoading(false);
             document.body.innerHTML = `<div class="h-screen w-screen flex flex-col justify-center items-center bg-red-100 text-red-800 p-8">
@@ -991,9 +1131,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 initializeAppUi(user);
             } else {
                 // If no user, try to sign in anonymously as a default if not using Google
-                // For a real Google Sign-In button, you'd trigger signInWithPopup here.
-                // For this app, we default to anonymous sign-in if no user is found on startup
-                // to allow data persistence for unauthenticated users (with proper security rules).
                 try {
                     await signInAnonymously(auth);
                 } catch (anonSignInError) {
@@ -1008,7 +1145,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Firebase Initialization Error:", error);
         toggleLoading(false);
         showToast("فشل تهيئة التطبيق. تأكد من صحة إعدادات Firebase.");
-        // Display an error message to the user directly on the page
         document.body.innerHTML = `<div class="h-screen w-screen flex flex-col justify-center items-center bg-red-100 text-red-800 p-8">
             <h1 class="text-2xl font-bold mb-4">خطأ في الإعدادات</h1>
             <p class="text-center">فشل تهيئة Firebase. تأكد من أن إعدادات مشروعك صحيحة.</p>
@@ -1019,8 +1155,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Apply dark mode preference on load
     applyDarkModePreference();
 
-    // Set initial date input to today's date
-    expenseDateInput.value = getDateString(new Date());
+    // Set initial date for display on daily tab (will be updated by wheel picker selection)
+    expenseDateInput.value = getDateStringFromWheels(new Date().getDate(), new Date().getMonth(), new Date().getFullYear());
 
     // --- Core UI Event Listeners ---
     signInBtn.addEventListener('click', async () => {
@@ -1028,7 +1164,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const provider = new GoogleAuthProvider();
             await signInWithPopup(auth, provider);
-            // The onAuthStateChanged listener will handle UI update
         } catch (error) {
             console.error("Google Sign-In Error: ", error);
             showToast("فشل تسجيل الدخول باستخدام جوجل.");
@@ -1053,9 +1188,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     categoriesTabBtn.addEventListener('click', () => switchTab('categories'));
     settingsBtn.addEventListener('click', () => switchTab('settings'));
 
-    // Daily Page Expense Input
-    expenseDateInput.addEventListener('change', renderCurrentDateExpenses);
-    addExpenseFAB.addEventListener('click', () => showExpenseModal()); // Show modal on FAB click
+    // Daily Page Expense Input (now a button to open modal)
+    openAddExpenseModalBtn.addEventListener('click', () => showExpenseModal());
+    addExpenseFAB.addEventListener('click', () => showExpenseModal()); // FAB still opens modal
 
     // Expense Modal Buttons
     saveExpenseBtn.addEventListener('click', addOrUpdateExpense);
@@ -1072,9 +1207,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Settings Page
     exportDataBtn.addEventListener('click', exportData);
     importDataBtn.addEventListener('click', importData);
-    importFileInput.addEventListener('change', handleImportFile); // Hidden input for file selection
+    importFileInput.addEventListener('change', handleImportFile);
     clearAllDataBtn.addEventListener('click', clearAllData);
-    darkModeToggle.addEventListener('change', toggleDarkMode); // Dark mode toggle
+    darkModeToggle.addEventListener('change', toggleDarkMode);
 
     // Offline status detection
     window.addEventListener('online', updateOfflineStatus);
@@ -1093,3 +1228,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 });
+
