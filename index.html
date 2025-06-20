@@ -1,236 +1,910 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>المصروفات الذكية</title>
-    <!-- You can add your manifest link here later if you create the file -->
-    <!-- <link rel="manifest" href="./manifest.json"> -->
-    <meta name="theme-color" content="#4f46e5">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المصروفات</title>
+    <link rel="manifest" href="./manifest.json">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --c-primary: #4f46e5; --c-primary-light: #6366f1; --c-secondary: #f3f4f6; --c-text-primary: #111827; --c-text-secondary: #6b7280; --c-bg-primary: #ffffff; --c-bg-secondary: #f9fafb; --c-border: #e5e7eb; --c-success: #10b981; --c-danger: #ef4444; --grad-primary: linear-gradient(135deg, var(--c-primary-light), var(--c-primary)); --grad-fab: linear-gradient(45deg, #f43f5e, #f97316); --grad-bg: linear-gradient(135deg, #f9fafb, #e5e7eb); --space-sm: 0.5rem; --space-md: 1rem; --space-lg: 1.5rem; --font-main: 'Cairo', sans-serif; --fs-sm: 0.875rem; --fs-base: 1rem; --fs-lg: 1.125rem; --fs-2xl: 2rem; --radius-md: 0.75rem; --radius-lg: 1rem; --radius-full: 9999px; --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1); --transition: all 0.3s ease-in-out; }
-        [data-theme="dark"] { --c-primary: #6366f1; --c-secondary: #374151; --c-text-primary: #f9fafb; --c-text-secondary: #9ca3af; --c-bg-primary: #111827; --c-bg-secondary: #1f2937; --c-border: #374151; --grad-bg: linear-gradient(135deg, #1f2937, #111827); }
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: var(--font-main); background: var(--grad-bg); color: var(--c-text-primary); }
-        #app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; background-color: var(--c-bg-primary); position: relative; overflow: hidden; box-shadow: 0 0 40px rgba(0,0,0,0.1); }
-        .screen { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--space-lg); }
-        .hidden { display: none !important; }
-        #main-app { justify-content: flex-start; padding: 0; }
-        .app-header { width: 100%; padding: var(--space-md); display: flex; justify-content: space-between; align-items: center; background-color: color-mix(in srgb, var(--c-bg-primary) 80%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--c-border); z-index: 10; flex-shrink: 0; }
-        #main-content { flex-grow: 1; width: 100%; overflow-y: auto; padding: var(--space-md); }
-        .app-nav { display: grid; grid-template-columns: 1fr 1fr auto 1fr 1fr; align-items: center; width: 100%; background-color: var(--c-bg-primary); border-top: 1px solid var(--c-border); z-index: 10; box-shadow: 0 -5px 15px -3px rgba(0,0,0,0.05); }
-        .btn, .nav-btn { border: none; cursor: pointer; font-family: inherit; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); transition: var(--transition); border-radius: var(--radius-md); }
-        .btn-primary { background: var(--grad-primary); color: #ffffff; box-shadow: var(--shadow-md); padding: var(--space-sm) var(--space-md); }
-        .btn-secondary { background-color: var(--c-secondary); color: var(--c-text-primary); padding: var(--space-sm) var(--space-md); }
-        .btn-danger { background-color: var(--c-danger); color: #ffffff; padding: var(--space-sm) var(--space-md); }
-        .nav-btn { flex-direction: column; gap: .25rem; font-size: var(--fs-sm); color: var(--c-text-secondary); background: transparent; padding: var(--space-sm) 0; height: 100%; }
-        .nav-btn.active { color: var(--c-primary); }
-        .nav-fab { width: 60px; height: 60px; border-radius: var(--radius-full); background: var(--grad-fab); color: #ffffff; box-shadow: var(--shadow-lg); display: flex; align-items: center; justify-content: center; border: 4px solid var(--c-bg-primary); cursor: pointer; transform: translateY(-20px); z-index: 1; }
-        .auth-card { text-align: center; padding: calc(var(--space-lg) * 2); animation: fadeIn .5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .logo { width: 60px; height: 60px; background: var(--grad-primary); color: #ffffff; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-md); }
-        .auth-buttons { display: flex; flex-direction: column; gap: var(--space-md); margin-top: var(--space-lg); }
-        .user-profile { display: flex; align-items: center; gap: var(--space-md); }
-        #user-avatar { width: 40px; height: 40px; border-radius: var(--radius-full); object-fit: cover; background-color: var(--c-secondary); border: 2px solid var(--c-primary); }
-        .page { display: flex; flex-direction: column; gap: var(--space-md); animation: fadeIn .5s; width: 100%; }
-        .card { background-color: var(--c-bg-primary); padding: var(--space-md); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--c-border); }
-        .card h3 { font-size: var(--fs-lg); margin-bottom: var(--space-md); display: flex; align-items: center; gap: var(--space-sm); }
-        .card .amount { font-size: var(--fs-2xl); font-weight: 700; color: var(--c-primary); }
-        .item-list { display: flex; flex-direction: column; gap: var(--space-sm); }
-        .expense-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-md); padding: var(--space-sm); border-radius: var(--radius-md); border-bottom: 1px solid var(--c-border); }
-        .item-icon { width: 40px; height: 40px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: #ffffff; flex-shrink: 0; }
-        .item-details { flex-grow: 1; } .item-name { font-weight: 600; } .item-category { font-size: var(--fs-sm); color: var(--c-text-secondary); } .item-amount { font-weight: 700; }
-        .item-actions { display: flex; } .item-actions button { color: var(--c-text-secondary); background: transparent; border: none; padding: .5rem; cursor: pointer; }
-        .category-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-md); padding: var(--space-sm); border-radius: var(--radius-md); border-bottom: 1px solid var(--c-border);}
-        .modal-backdrop { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5); display: none; align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(4px); opacity: 0; transition: opacity .3s; }
-        .modal-backdrop.active { display: flex; opacity: 1; }
-        .modal { background-color: var(--c-bg-primary); padding: var(--space-lg); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 90%; max-width: 400px; transform: scale(.95); opacity: 0; transition: all .3s; }
-        .modal-backdrop.active .modal { transform: scale(1); opacity: 1; }
-        .modal-actions { display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-md); }
-        .form-group { display: flex; flex-direction: column; gap: var(--space-sm); margin-bottom: var(--space-md); }
-        input, select { width: 100%; padding: var(--space-sm) var(--space-md); border: 1px solid var(--c-border); border-radius: var(--radius-md); background-color: var(--c-bg-secondary); font-family: inherit; font-size: var(--fs-base); }
-        input[type="color"] { padding: 2px; height: 40px; }
-        .spinner { width: 40px; height: 40px; border: 4px solid var(--c-secondary); border-top-color: var(--c-primary); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .empty-state { text-align: center; color: var(--c-text-secondary); padding: calc(var(--space-lg) * 2) 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        #loading-screen, #login-screen, #main-app {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+        }
+        .bottom-nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 0;
+            color: #6b7280; /* Gray-500 */
+            font-size: 0.75rem; /* text-xs */
+            cursor: pointer;
+            border-radius: 10px;
+            transition: background-color 0.2s, color 0.2s;
+            position: relative; /* For the active indicator */
+        }
+        .bottom-nav-item.active {
+            color: #4f46e5; /* Indigo-600 */
+        }
+        .bottom-nav-item.active::after {
+            content: '';
+            position: absolute;
+            top: -4px; /* Position above the icon */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 4px;
+            background-color: #4f46e5; /* Indigo-600 */
+            border-radius: 2px;
+        }
+        .bottom-nav-item:hover {
+            background-color: #f3f4f6;
+        }
+        .fab {
+            position: fixed;
+            bottom: 70px; /* Adjust based on bottom nav height */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4f46e5; /* Indigo-600 */
+            color: white;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+            z-index: 1001;
+            transition: background-color 0.2s;
+        }
+        .fab:hover {
+            background-color: #4338ca; /* Indigo-700 */
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .expense-item, .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background-color: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .delete-btn {
+            background-color: #ef4444; /* Red-500 */
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .delete-btn:hover {
+            background-color: #dc2626; /* Red-600 */
+        }
+        .color-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 8px;
+            border: 1px solid #ccc; /* Add a slight border for visibility */
+        }
+
+        /* Custom scrollbar for better mobile UX */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Responsive adjustments for main content padding */
+        #main-app-content {
+            padding-bottom: 90px; /* Space for the bottom nav */
+            padding-top: 60px; /* Space for the header */
+            flex-grow: 1; /* Allow content to grow */
+            overflow-y: auto; /* Enable scrolling for content */
+        }
+
+        /* Responsive adjustments for login screen */
+        #login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .auth-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 300px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .google-auth-btn {
+            background-color: white;
+            color: #3b82f6; /* Blue-500 */
+            border: 1px solid #d1d5db; /* Gray-300 */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .google-auth-btn:hover {
+            background-color: #f9fafb;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .google-auth-btn i {
+            margin-right: 10px;
+        }
+        .anonymous-auth-btn {
+            background-color: #6b7280; /* Gray-500 */
+            color: white;
+        }
+        .anonymous-auth-btn:hover {
+            background-color: #4b5563; /* Gray-700 */
+        }
+
     </style>
 </head>
-<body>
-    <div id="app-container"></div>
-    <div id="modal-container"></div>
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const appContainer = document.getElementById('app-container');
-            const modalContainer = document.getElementById('modal-container');
-            let app, auth, db;
+<body class="flex flex-col min-h-screen">
 
-            const state = { user: null, expenses: [], categories: [], currentPage: 'daily', isEditing: null, unsubscribe: [] };
-            
-            function setState(newState) {
-                Object.assign(state, newState);
-                render();
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-white flex items-center justify-center flex-col z-[3000]">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-500"></div>
+        <p class="mt-4 text-gray-700 text-lg">جاري التحميل...</p>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="hidden flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-lg">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-6">مرحباً بك!</h1>
+            <p class="text-gray-600 mb-8">يرجى تسجيل الدخول للمتابعة.</p>
+
+            <button id="google-signin-btn" class="auth-button google-auth-btn">
+                <i class="fab fa-google text-blue-500"></i>
+                <span>تسجيل الدخول باستخدام جوجل</span>
+            </button>
+            <button id="anonymous-signin-btn" class="auth-button anonymous-auth-btn">
+                <i class="fas fa-user-secret"></i>
+                <span>التصفح كمجهول</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="main-app" class="hidden flex-1 flex flex-col relative">
+        <!-- Header -->
+        <header class="fixed top-0 left-0 right-0 bg-indigo-600 text-white p-4 shadow-md z-10">
+            <div class="flex justify-between items-center max-w-lg mx-auto">
+                <h1 id="header-title" class="text-xl font-semibold">المصروفات اليومية</h1>
+                <span id="user-id-display" class="text-xs text-indigo-200"></span>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="main-app-content" class="flex-1 p-4 overflow-y-auto mt-16 mb-20 max-w-lg mx-auto w-full">
+            <!-- Daily View -->
+            <div id="daily-view" class="active-page">
+                <div class="bg-white p-4 rounded-lg shadow-md mb-4 flex items-center justify-between">
+                    <p class="text-lg font-medium text-gray-700">إجمالي مصروفات اليوم:</p>
+                    <span id="daily-total" class="text-2xl font-bold text-indigo-600">0.00 ر.س</span>
+                </div>
+                <div id="daily-expenses-list" class="space-y-2">
+                    <!-- Daily expenses will be rendered here -->
+                </div>
+                <p id="no-daily-expenses" class="text-center text-gray-500 mt-8 hidden">لا توجد مصروفات لهذا اليوم.</p>
+            </div>
+
+            <!-- Monthly View -->
+            <div id="monthly-view" class="hidden">
+                <div class="bg-white p-4 rounded-lg shadow-md mb-4 flex items-center justify-between">
+                    <p class="text-lg font-medium text-gray-700">إجمالي مصروفات الشهر:</p>
+                    <span id="monthly-total" class="text-2xl font-bold text-indigo-600">0.00 ر.س</span>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">المصروفات حسب الفئة (هذا الشهر):</h3>
+                    <div id="monthly-category-summary" class="space-y-2">
+                        <!-- Monthly category summary will be rendered here -->
+                    </div>
+                    <p id="no-monthly-expenses" class="text-center text-gray-500 mt-8 hidden">لا توجد مصروفات لهذا الشهر.</p>
+                </div>
+            </div>
+
+            <!-- Categories View -->
+            <div id="categories-view" class="hidden">
+                <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">إضافة فئة جديدة:</h3>
+                    <input type="text" id="new-category-name" placeholder="اسم الفئة" class="w-full p-3 border border-gray-300 rounded-md mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent" />
+                    <div class="flex items-center mb-4">
+                        <label for="new-category-color" class="mr-3 text-gray-700">لون الفئة:</label>
+                        <input type="color" id="new-category-color" value="#4f46e5" class="w-10 h-10 p-1 border border-gray-300 rounded-full cursor-pointer" />
+                    </div>
+                    <button id="add-category-btn" class="w-full bg-indigo-500 text-white p-3 rounded-md font-semibold hover:bg-indigo-600 transition duration-200">
+                        <i class="fas fa-plus mr-2"></i>إضافة فئة
+                    </button>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">الفئات الموجودة:</h3>
+                    <div id="categories-list" class="space-y-2">
+                        <!-- Categories will be rendered here -->
+                    </div>
+                    <p id="no-categories" class="text-center text-gray-500 mt-8 hidden">لا توجد فئات بعد.</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Floating Action Button (FAB) -->
+        <button id="add-expense-fab" class="fab">
+            <i class="fas fa-plus"></i>
+        </button>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="bottom-nav">
+            <div class="bottom-nav-item active" data-page="daily-view">
+                <i class="fas fa-calendar-day text-xl"></i>
+                <span class="mt-1">يومي</span>
+            </div>
+            <div class="bottom-nav-item" data-page="monthly-view">
+                <i class="fas fa-calendar-alt text-xl"></i>
+                <span class="mt-1">شهري</span>
+            </div>
+            <div class="bottom-nav-item" data-page="categories-view">
+                <i class="fas fa-tags text-xl"></i>
+                <span class="mt-1">فئات</span>
+            </div>
+            <div class="bottom-nav-item" id="logout-btn">
+                <i class="fas fa-sign-out-alt text-xl"></i>
+                <span class="mt-1">خروج</span>
+            </div>
+        </nav>
+
+        <!-- Expense Modal -->
+        <div id="expense-modal-overlay" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">إضافة مصروف جديد</h2>
+                <input type="text" id="expense-name" placeholder="اسم المصروف" class="w-full p-3 border border-gray-300 rounded-md mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent" />
+                <input type="number" id="expense-amount" placeholder="المبلغ" class="w-full p-3 border border-gray-300 rounded-md mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent" />
+                <select id="expense-category" class="w-full p-3 border border-gray-300 rounded-md mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
+                    <option value="" disabled selected>اختر فئة</option>
+                    <!-- Categories will be dynamically loaded here -->
+                </select>
+                <button id="save-expense-btn" class="w-full bg-indigo-500 text-white p-3 rounded-md font-semibold hover:bg-indigo-600 transition duration-200">
+                    <i class="fas fa-check mr-2"></i>حفظ المصروف
+                </button>
+                <button id="cancel-expense-btn" class="w-full bg-gray-300 text-gray-800 p-3 rounded-md font-semibold mt-2 hover:bg-gray-400 transition duration-200">
+                    <i class="fas fa-times mr-2"></i>إلغاء
+                </button>
+            </div>
+        </div>
+
+        <!-- Custom Alert Modal -->
+        <div id="custom-alert-modal-overlay" class="modal-overlay hidden">
+            <div class="modal-content text-center">
+                <h3 id="alert-title" class="text-xl font-bold mb-4 text-gray-800"></h3>
+                <p id="alert-message" class="text-gray-700 mb-6"></p>
+                <button id="alert-ok-btn" class="w-full bg-indigo-500 text-white p-3 rounded-md font-semibold hover:bg-indigo-600 transition duration-200">موافق</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase SDKs (v9.6.0 for broad compatibility) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, signOut, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
+
+        // Global variables for Firebase (MUST be used as provided by the environment)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let userId = null;
+        let isAuthReady = false; // Flag to ensure auth state is checked once before loading data
+
+        // --- UI Element References ---
+        const loadingScreen = document.getElementById('loading-screen');
+        const loginScreen = document.getElementById('login-screen');
+        const mainApp = document.getElementById('main-app');
+        const googleSignInBtn = document.getElementById('google-signin-btn');
+        const anonymousSignInBtn = document.getElementById('anonymous-signin-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userIdDisplay = document.getElementById('user-id-display');
+
+        const headerTitle = document.getElementById('header-title');
+        const dailyView = document.getElementById('daily-view');
+        const monthlyView = document.getElementById('monthly-view');
+        const categoriesView = document.getElementById('categories-view');
+        const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+        const addExpenseFab = document.getElementById('add-expense-fab');
+
+        const expenseModalOverlay = document.getElementById('expense-modal-overlay');
+        const expenseNameInput = document.getElementById('expense-name');
+        const expenseAmountInput = document.getElementById('expense-amount');
+        const expenseCategorySelect = document.getElementById('expense-category');
+        const saveExpenseBtn = document.getElementById('save-expense-btn');
+        const cancelExpenseBtn = document.getElementById('cancel-expense-btn');
+
+        const dailyTotalSpan = document.getElementById('daily-total');
+        const dailyExpensesList = document.getElementById('daily-expenses-list');
+        const noDailyExpensesText = document.getElementById('no-daily-expenses');
+
+        const monthlyTotalSpan = document.getElementById('monthly-total');
+        const monthlyCategorySummary = document.getElementById('monthly-category-summary');
+        const noMonthlyExpensesText = document.getElementById('no-monthly-expenses');
+
+        const newCategoryNameInput = document.getElementById('new-category-name');
+        const newCategoryColorInput = document.getElementById('new-category-color');
+        const addCategoryBtn = document.getElementById('add-category-btn');
+        const categoriesListDiv = document.getElementById('categories-list');
+        const noCategoriesText = document.getElementById('no-categories');
+
+        const customAlertModalOverlay = document.getElementById('custom-alert-modal-overlay');
+        const alertTitle = document.getElementById('alert-title');
+        const alertMessage = document.getElementById('alert-message');
+        const alertOkBtn = document.getElementById('alert-ok-btn');
+
+        let allCategories = []; // To store categories for dropdowns and display
+
+        // --- Custom Alert Function (replaces alert()) ---
+        function showCustomAlert(title, message) {
+            alertTitle.textContent = title;
+            alertMessage.textContent = message;
+            customAlertModalOverlay.classList.remove('hidden');
+        }
+
+        alertOkBtn.addEventListener('click', () => {
+            customAlertModalOverlay.classList.add('hidden');
+        });
+
+        // --- Utility Functions ---
+        function getTodayDateString() {
+            const now = new Date();
+            return now.toISOString().split('T')[0]; // YYYY-MM-DD
+        }
+
+        function getMonthYearString(date = new Date()) {
+            return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`; // YYYY-MM
+        }
+
+        function formatCurrency(amount) {
+            return `${amount.toFixed(2)} ر.س`; // Saudi Riyal currency format
+        }
+
+        function formatTimestamp(timestamp) {
+            const date = timestamp.toDate(); // Convert Firebase Timestamp to Date object
+            return date.toLocaleString('ar-SA', {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // --- UI State Management ---
+        function showScreen(screenId) {
+            loadingScreen.classList.add('hidden');
+            loginScreen.classList.add('hidden');
+            mainApp.classList.add('hidden');
+
+            if (screenId === 'loading') {
+                loadingScreen.classList.remove('hidden');
+            } else if (screenId === 'login') {
+                loginScreen.classList.remove('hidden');
+            } else if (screenId === 'main') {
+                mainApp.classList.remove('hidden');
+            }
+        }
+
+        function showPage(pageId) {
+            // Hide all pages
+            dailyView.classList.add('hidden');
+            monthlyView.classList.add('hidden');
+            categoriesView.classList.add('hidden');
+
+            // Show the selected page
+            document.getElementById(pageId).classList.remove('hidden');
+
+            // Update header title
+            switch (pageId) {
+                case 'daily-view':
+                    headerTitle.textContent = 'المصروفات اليومية';
+                    break;
+                case 'monthly-view':
+                    headerTitle.textContent = 'المصروفات الشهرية';
+                    break;
+                case 'categories-view':
+                    headerTitle.textContent = 'إدارة الفئات';
+                    break;
             }
 
-            function formatCurrency(amount) { return new Intl.NumberFormat('ar-AE', { style: 'currency', currency: 'AED' }).format(amount || 0); }
-            function escapeHTML(str) { return str ? str.replace(/[&<>'"]/g, tag => ({'&':'&','<':'<','>':'>',"'":''','"':'"'}[tag]||tag)) : ''; }
-
-            // --- TEMPLATING / RENDERING FUNCTIONS ---
-            function render() {
-                if (!state.user) {
-                    appContainer.innerHTML = createAuthScreen();
+            // Update active state in bottom nav
+            bottomNavItems.forEach(item => {
+                if (item.dataset.page === pageId) {
+                    item.classList.add('active');
                 } else {
-                    appContainer.innerHTML = createMainAppShell(state);
-                    const mainContent = document.getElementById('main-content');
-                    mainContent.innerHTML = createPageContent(state);
+                    item.classList.remove('active');
                 }
-                lucide.createIcons();
-                setupEventListeners();
-            }
+            });
 
-            function createAuthScreen() { return `<div class="screen active" id="auth-screen"><div class="auth-card"><div class="logo"><i data-lucide="wallet"></i></div><h1>المصروفات الذكية</h1><p>تتبع نفقاتك بسهولة وأناقة.</p><div class="auth-buttons"><button id="google-signin-btn" class="btn btn-primary"><i data-lucide="log-in"></i><span>تسجيل الدخول بـ Google</span></button><button id="anon-signin-btn" class="btn btn-secondary"><i data-lucide="user-x"></i><span>التصفح كمجهول</span></button></div></div></div>`; }
-            
-            function createMainAppShell({ user, currentPage }) {
-                const defaultAvatar = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xOCAyMHYtMWMwLTIuMi0xLjgtNC00LTRoLTRjLTIuMiAwLTQgMS44LTQgNHYxIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSI3IiByPSI0Ii8+PC9zdmc+";
-                return `<div class="screen active" id="main-app"><header class="app-header"><div class="user-profile"><img id="user-avatar" src="${user.photoURL || defaultAvatar}"><div><h2>${user.isAnonymous ? 'مستخدم مجهول' : (user.displayName || 'مستخدم جديد')}</h2></div></div></header><main id="main-content"></main><nav class="app-nav"><button class="nav-btn ${currentPage === 'daily' ? 'active' : ''}" data-page="daily"><i data-lucide="calendar-day"></i><span>يومي</span></button><button class="nav-btn ${currentPage === 'monthly' ? 'active' : ''}" data-page="monthly"><i data-lucide="bar-chart-3"></i><span>شهري</span></button><button id="fab-add-expense" class="nav-fab"><i data-lucide="plus"></i></button><button class="nav-btn ${currentPage === 'categories' ? 'active' : ''}" data-page="categories"><i data-lucide="tags"></i><span>فئات</span></button><button id="logout-btn" class="nav-btn"><i data-lucide="log-out"></i><span>خروج</span></button></nav></div>`;
-            }
-
-            function createPageContent(appState) {
-                switch (appState.currentPage) {
-                    case 'daily': return createDailyPage(appState);
-                    case 'monthly': return createMonthlyPage(appState);
-                    case 'categories': return createCategoriesPage(appState);
-                    default: return ``;
+            // Reload data for the active page
+            if (isAuthReady && userId) {
+                switch (pageId) {
+                    case 'daily-view':
+                        loadDailyExpenses();
+                        break;
+                    case 'monthly-view':
+                        loadMonthlySummary();
+                        break;
+                    case 'categories-view':
+                        loadCategories();
+                        break;
                 }
             }
+        }
 
-            function createDailyPage({ expenses, categories }) {
-                const today = new Date().toISOString().slice(0, 10);
-                const dailyExpenses = expenses.filter(e => e.date === today);
-                const total = dailyExpenses.reduce((sum, e) => sum + e.amount, 0);
-                let expensesHTML = dailyExpenses.length > 0 ? dailyExpenses.map(exp => `<div class="expense-item" data-id="${exp.id}"><div class="item-icon" style="background-color: ${(categories.find(c=>c.id===exp.categoryId) || {}).color || '#ccc'};"><i data-lucide="${(categories.find(c=>c.id===exp.categoryId) || {}).icon || 'tag'}"></i></div><div class="item-details"><p class="item-name">${escapeHTML(exp.name)}</p><p class="item-category">${escapeHTML((categories.find(c=>c.id===exp.categoryId) || {}).name || 'غير محدد')}</p></div><p class="item-amount">${formatCurrency(exp.amount)}</p><div class="item-actions"><button class="btn-icon delete-expense"><i data-lucide="trash-2"></i></button></div></div>`).join('') : `<p class="empty-state">لا توجد مصروفات مسجلة اليوم.</p>`;
-                return `<div class="page"><div class="card"><h3><i data-lucide="sun"></i>مصروفات اليوم</h3><p class="amount">${formatCurrency(total)}</p></div><div class="item-list">${expensesHTML}</div></div>`;
+        function showExpenseModal() {
+            expenseModalOverlay.classList.remove('hidden');
+            // Populate category dropdown
+            expenseCategorySelect.innerHTML = '<option value="" disabled selected>اختر فئة</option>';
+            allCategories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                expenseCategorySelect.appendChild(option);
+            });
+            expenseNameInput.value = '';
+            expenseAmountInput.value = '';
+        }
+
+        function hideExpenseModal() {
+            expenseModalOverlay.classList.add('hidden');
+        }
+
+        // --- Authentication ---
+        // Initial sign-in or check authentication state on load
+        window.onload = async () => {
+            showScreen('loading');
+            try {
+                // Try to sign in with custom token if provided (from Canvas environment)
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                    console.log("Signed in with custom token.");
+                } else {
+                    // If no custom token, sign in anonymously for a seamless start
+                    await signInAnonymously(auth);
+                    console.log("Signed in anonymously.");
+                }
+            } catch (error) {
+                console.error("Firebase initial sign-in error:", error);
+                showCustomAlert("خطأ في المصادقة", "حدث خطأ أثناء محاولة تسجيل الدخول الأولي. يرجى المحاولة مرة أخرى.");
+                showScreen('login'); // Show login screen on error
             }
+        };
 
-            function createMonthlyPage({ expenses, categories }) {
-                const now = new Date();
-                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-                const monthlyExpenses = expenses.filter(e => e.date >= startOfMonth);
-                const total = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
-                const categoryTotals = {};
-                monthlyExpenses.forEach(exp => { categoryTotals[exp.categoryId] = (categoryTotals[exp.categoryId] || 0) + exp.amount; });
-                const sortedCategories = Object.entries(categoryTotals).sort(([, a], [, b]) => b - a);
-                let categoriesHTML = sortedCategories.length > 0 ? sortedCategories.map(([catId, catTotal]) => {
-                    const category = categories.find(c => c.id === catId); if (!category) return '';
-                    const percentage = total > 0 ? (catTotal / total) * 100 : 0;
-                    return `<div class="category-summary-item" style="display:flex; align-items:center; gap: var(--space-md); padding: var(--space-sm) 0;"><span style="width: 80px; text-align: right;">${escapeHTML(category.name)}</span><div class="progress-bar" style="flex-grow:1; height:8px; background-color:var(--c-secondary); border-radius:99px;"><div class="progress-fill" style="width:${percentage}%; background-color:${category.color}; height:100%; border-radius:99px;"></div></div><span>${formatCurrency(catTotal)}</span></div>`;
-                }).join('') : `<p class="empty-state">لا توجد بيانات لهذا الشهر.</p>`;
-                return `<div class="page"><div class="card"><h3><i data-lucide="calendar-month"></i>ملخص الشهر</h3><p class="amount">${formatCurrency(total)}</p></div><div class="card"><h3><i data-lucide="pie-chart"></i>الأعلى إنفاقًا</h3><div class="item-list">${categoriesHTML}</div></div></div>`;
+        // Auth state observer (runs whenever auth state changes)
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                userIdDisplay.textContent = `معرف المستخدم: ${userId}`;
+                showScreen('main');
+                if (!isAuthReady) { // Only load data once after initial auth check
+                    showPage('daily-view'); // Default view
+                    loadCategories(); // Load categories for dropdown and categories page
+                    loadDailyExpenses(); // Load daily expenses for daily page
+                    loadMonthlySummary(); // Load monthly summary for monthly page
+                    isAuthReady = true;
+                } else {
+                     // If auth state changes after initial load (e.g., user logs out then logs back in)
+                     // Ensure correct page is displayed and data is refreshed
+                     const currentPage = document.querySelector('.bottom-nav-item.active').dataset.page;
+                     showPage(currentPage);
+                }
+            } else {
+                userId = null;
+                userIdDisplay.textContent = '';
+                showScreen('login');
+                isAuthReady = true; // Mark as ready even if no user, so subsequent actions don't wait indefinitely
             }
+            loadingScreen.classList.add('hidden'); // Hide loading screen once auth check is done
+        });
 
-            function createCategoriesPage({ categories }) {
-                let categoriesHTML = categories.length > 0 ? categories.map(cat => `<div class="category-item" data-id="${cat.id}"><div class="item-icon" style="background-color: ${cat.color};"><i data-lucide="${cat.icon || 'tag'}"></i></div><div class="item-details"><p class="item-name">${escapeHTML(cat.name)}</p></div><div class="item-actions"><button class="btn-icon delete-category"><i data-lucide="trash-2"></i></button></div></div>`).join('') : `<p class="empty-state">لا توجد فئات مخصصة.</p>`;
-                return `<div class="page"><div class="card"><h3><i data-lucide="tags"></i>إدارة الفئات</h3><div class="form-group"><label>اسم الفئة</label><input type="text" id="new-category-name" placeholder="مثال: تعليم"></div><div class="form-group"><label>اللون</label><input type="color" id="new-category-color" value="#8b5cf6"></div><button id="add-category-btn" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">إضافة فئة</button></div><div class="item-list">${categoriesHTML}</div></div>`;
+        googleSignInBtn.addEventListener('click', async () => {
+            showScreen('loading');
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+                console.log("Google Sign-in successful.");
+            } catch (error) {
+                console.error("Google Sign-in error:", error);
+                showCustomAlert("خطأ في تسجيل الدخول بجوجل", `حدث خطأ: ${error.message}`);
+                showScreen('login');
             }
+        });
 
-            function toggleModal(show, content = '') {
-                modalContainer.innerHTML = show ? `<div class="modal-backdrop"><div class="modal">${content}</div></div>` : '';
-                setTimeout(() => modalContainer.querySelector('.modal-backdrop')?.classList.add('active'), 10);
-                if(show) lucide.createIcons();
+        anonymousSignInBtn.addEventListener('click', async () => {
+            showScreen('loading');
+            try {
+                await signInAnonymously(auth);
+                console.log("Anonymous Sign-in successful.");
+            } catch (error) {
+                console.error("Anonymous Sign-in error:", error);
+                showCustomAlert("خطأ في تسجيل الدخول كمجهول", `حدث خطأ: ${error.message}`);
+                showScreen('login');
             }
+        });
 
-            // --- EVENT LISTENERS & LOGIC ---
-            function setupEventListeners() {
-                appContainer.addEventListener('click', e => {
-                    const targetBtn = e.target.closest('button');
-                    if (!targetBtn) return;
-                    
-                    // Auth and Nav
-                    if (targetBtn.id === 'google-signin-btn') auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-                    else if (targetBtn.id === 'anon-signin-btn') auth.signInAnonymously();
-                    else if (targetBtn.id === 'logout-btn') auth.signOut();
-                    else if (targetBtn.dataset.page) setState({ currentPage: targetBtn.dataset.page });
-                    
-                    // FAB
-                    else if (targetBtn.id === 'fab-add-expense') {
-                        const categoryOptions = state.categories.map(c => `<option value="${c.id}">${escapeHTML(c.name)}</option>`).join('');
-                        toggleModal(true, `<h3>إضافة مصروف</h3><div class="form-group"><label>الاسم</label><input id="expense-name"></div><div class="form-group"><label>المبلغ</label><input id="expense-amount" type="number"></div><div class="form-group"><label>الفئة</label><select id="expense-category">${categoryOptions}</select></div><div class="modal-actions"><button id="save-expense-btn" class="btn btn-primary">حفظ</button><button class="btn btn-secondary modal-cancel">إلغاء</button></div>`);
-                    }
-                    
-                    // Categories Page
-                    else if (targetBtn.id === 'add-category-btn') {
-                        const name = document.getElementById('new-category-name').value.trim();
-                        const color = document.getElementById('new-category-color').value;
-                        if(name) db.collection('users').doc(state.user.uid).collection('categories').add({name, color, icon: 'tag' });
-                    }
-                    else if(targetBtn.classList.contains('delete-category')) {
-                        const id = targetBtn.closest('.category-item').dataset.id;
-                        db.collection('users').doc(state.user.uid).collection('categories').doc(id).delete();
-                    }
+        logoutBtn.addEventListener('click', async () => {
+            showScreen('loading');
+            try {
+                await signOut(auth);
+                console.log("Signed out successfully.");
+            } catch (error) {
+                console.error("Logout error:", error);
+                showCustomAlert("خطأ في تسجيل الخروج", `حدث خطأ: ${error.message}`);
+                showScreen('main'); // Stay on main if logout fails
+            }
+        });
 
-                    // Expenses
-                    else if(targetBtn.classList.contains('delete-expense')) {
-                        const id = targetBtn.closest('.expense-item').dataset.id;
-                        db.collection('users').doc(state.user.uid).collection('expenses').doc(id).delete();
-                    }
+        // --- Firestore Operations (Data Handling) ---
+
+        // Listener for Categories (used across app for dropdowns and categories page)
+        function loadCategories() {
+            if (!userId) return;
+            const q = query(collection(db, `artifacts/${appId}/users/${userId}/categories`));
+            onSnapshot(q, (snapshot) => {
+                allCategories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderCategories(allCategories);
+                console.log("Categories updated:", allCategories);
+            }, (error) => {
+                console.error("Error loading categories:", error);
+                showCustomAlert("خطأ", "فشل تحميل الفئات.");
+            });
+        }
+
+        // Listener for Daily Expenses
+        function loadDailyExpenses() {
+            if (!userId) return;
+            const today = getTodayDateString();
+            const q = query(
+                collection(db, `artifacts/${appId}/users/${userId}/expenses`),
+                where('date', '==', today)
+            );
+            onSnapshot(q, (snapshot) => {
+                const expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderExpenses(expenses);
+                updateDailyTotal(expenses);
+                console.log("Daily expenses updated:", expenses);
+            }, (error) => {
+                console.error("Error loading daily expenses:", error);
+                showCustomAlert("خطأ", "فشل تحميل المصروفات اليومية.");
+            });
+        }
+
+        // Listener for Monthly Summary
+        function loadMonthlySummary() {
+            if (!userId) return;
+            const currentMonthYear = getMonthYearString();
+            const q = query(
+                collection(db, `artifacts/${appId}/users/${userId}/expenses`),
+                where('monthYear', '==', currentMonthYear)
+            );
+            onSnapshot(q, (snapshot) => {
+                const expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                updateMonthlyTotal(expenses);
+                renderMonthlyCategorySummary(expenses);
+                console.log("Monthly expenses updated:", expenses);
+            }, (error) => {
+                console.error("Error loading monthly summary:", error);
+                showCustomAlert("خطأ", "فشل تحميل ملخص المصروفات الشهرية.");
+            });
+        }
+
+
+        // --- Render Functions ---
+        function renderExpenses(expenses) {
+            dailyExpensesList.innerHTML = '';
+            if (expenses.length === 0) {
+                noDailyExpensesText.classList.remove('hidden');
+            } else {
+                noDailyExpensesText.classList.add('hidden');
+                expenses.forEach(expense => {
+                    const category = allCategories.find(cat => cat.id === expense.categoryId);
+                    const categoryName = category ? category.name : 'غير مصنف';
+                    const categoryColor = category ? category.color : '#cccccc'; // Default gray for unknown
+
+                    const expenseItem = document.createElement('div');
+                    expenseItem.className = 'expense-item flex items-center justify-between bg-white p-3 rounded-lg shadow-sm';
+                    expenseItem.innerHTML = `
+                        <div class="flex flex-col flex-grow">
+                            <span class="font-medium text-gray-800">${expense.name}</span>
+                            <span class="text-sm text-gray-600 flex items-center">
+                                ${categoryName}
+                                <span class="color-dot mr-2" style="background-color: ${categoryColor};"></span>
+                            </span>
+                            <span class="text-xs text-gray-500">${formatTimestamp(expense.timestamp)}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-lg font-bold text-indigo-600 ml-4">${formatCurrency(expense.amount)}</span>
+                            <button class="delete-btn bg-red-500 hover:bg-red-600 text-white p-2 rounded-md ml-2" data-id="${expense.id}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    `;
+                    dailyExpensesList.appendChild(expenseItem);
                 });
 
-                modalContainer.addEventListener('click', e => {
-                    if (e.target.closest('.modal-cancel') || e.target.classList.contains('modal-backdrop')) toggleModal(false);
-                    else if (e.target.id === 'save-expense-btn') {
-                        const name = document.getElementById('expense-name').value.trim();
-                        const amount = parseFloat(document.getElementById('expense-amount').value);
-                        const categoryId = document.getElementById('expense-category').value;
-                        if (!name || isNaN(amount) || !categoryId) return alert("يرجى ملء جميع الحقول");
-                        db.collection('users').doc(state.user.uid).collection('expenses').add({ name, amount, categoryId, createdAt: firebase.firestore.FieldValue.serverTimestamp(), date: new Date().toISOString().slice(0, 10) });
-                        toggleModal(false);
-                    }
-                });
-            }
-
-            // --- APP INITIALIZATION ---
-            function init() {
-                appContainer.innerHTML = `<div class="screen active"><div class="spinner"></div><p>جاري التحميل...</p></div>`;
-                const timeout = setTimeout(() => { appContainer.innerHTML = `<div class="screen active"><p>فشل الاتصال. يرجى تحديث الصفحة.</p></div>`; }, 10000);
-
-                try {
-                    const firebaseConfig = { apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ", authDomain: "my-expenses-81714.firebaseapp.com", projectId: "my-expenses-81714", storageBucket: "my-expenses-81714.firebasestorage.app", messagingSenderId: "672207051964", appId: "1:672207051964:web:b6e0cedc143bd06fd584b9" };
-                    app = firebase.initializeApp(firebaseConfig);
-                    auth = firebase.auth();
-                    db = firebase.firestore();
-
-                    auth.onAuthStateChanged(user => {
-                        clearTimeout(timeout);
-                        if(state.unsubscribe.length > 0) state.unsubscribe.forEach(unsub => unsub());
-
-                        if (user) {
-                            const unsubExpenses = db.collection('users').doc(user.uid).collection('expenses').orderBy('createdAt', 'desc').onSnapshot(snap => setState({ expenses: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
-                            const unsubCategories = db.collection('users').doc(user.uid).collection('categories').onSnapshot(snap => {
-                                const cats = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                                if (cats.length === 0 && !user.isAnonymous) {
-                                     [{ name: 'طعام', color: '#ef4444', icon: 'utensils' }, { name: 'مواصلات', color: '#3b82f6', icon: 'car' }].forEach(cat => db.collection('users').doc(user.uid).collection('categories').add(cat));
-                                }
-                                setState({ categories: cats });
-                            });
-                            state.unsubscribe = [unsubExpenses, unsubCategories];
-                            setState({ user });
-                        } else {
-                            setState({ user: null, expenses: [], categories: [] });
-                        }
+                // Add event listeners for delete buttons
+                dailyExpensesList.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const expenseId = e.currentTarget.dataset.id;
+                        deleteExpense(expenseId);
                     });
-                    setupEventListeners();
-                } catch (e) { clearTimeout(timeout); appContainer.innerHTML = `<div class="screen active"><p>حدث خطأ فادح.</p></div>`; console.error(e); }
+                });
             }
-            init();
+        }
+
+        function updateDailyTotal(expenses) {
+            const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            dailyTotalSpan.textContent = formatCurrency(total);
+        }
+
+        function updateMonthlyTotal(expenses) {
+            const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            monthlyTotalSpan.textContent = formatCurrency(total);
+        }
+
+        function renderMonthlyCategorySummary(expenses) {
+            monthlyCategorySummary.innerHTML = '';
+            if (expenses.length === 0) {
+                noMonthlyExpensesText.classList.remove('hidden');
+                return;
+            } else {
+                noMonthlyExpensesText.classList.add('hidden');
+            }
+
+            const categoryTotals = {};
+            expenses.forEach(expense => {
+                const category = allCategories.find(cat => cat.id === expense.categoryId);
+                const categoryName = category ? category.name : 'غير مصنف';
+                const categoryColor = category ? category.color : '#cccccc';
+
+                if (!categoryTotals[categoryName]) {
+                    categoryTotals[categoryName] = { total: 0, color: categoryColor };
+                }
+                categoryTotals[categoryName].total += expense.amount;
+            });
+
+            // Sort by total amount (descending)
+            const sortedCategories = Object.entries(categoryTotals).sort(([, a], [, b]) => b.total - a.total);
+
+            sortedCategories.forEach(([name, data]) => {
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center bg-gray-50 p-2 rounded-md';
+                item.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="color-dot mr-2" style="background-color: ${data.color};"></span>
+                        <span class="text-gray-700">${name}</span>
+                    </div>
+                    <span class="font-medium text-gray-800">${formatCurrency(data.total)}</span>
+                `;
+                monthlyCategorySummary.appendChild(item);
+            });
+        }
+
+        function renderCategories(categories) {
+            categoriesListDiv.innerHTML = '';
+            if (categories.length === 0) {
+                noCategoriesText.classList.remove('hidden');
+            } else {
+                noCategoriesText.classList.add('hidden');
+                categories.forEach(category => {
+                    const categoryItem = document.createElement('div');
+                    categoryItem.className = 'category-item flex items-center justify-between bg-white p-3 rounded-lg shadow-sm';
+                    categoryItem.innerHTML = `
+                        <div class="flex items-center">
+                            <span class="color-dot mr-2" style="background-color: ${category.color};"></span>
+                            <span class="font-medium text-gray-800">${category.name}</span>
+                        </div>
+                        <button class="delete-btn bg-red-500 hover:bg-red-600 text-white p-2 rounded-md" data-id="${category.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    categoriesListDiv.appendChild(categoryItem);
+                });
+
+                // Add event listeners for delete buttons
+                categoriesListDiv.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const categoryId = e.currentTarget.dataset.id;
+                        deleteCategory(categoryId);
+                    });
+                });
+            }
+        }
+
+
+        // --- CRUD Operations ---
+
+        async function addExpense() {
+            const name = expenseNameInput.value.trim();
+            const amount = parseFloat(expenseAmountInput.value);
+            const categoryId = expenseCategorySelect.value;
+
+            if (!name || isNaN(amount) || amount <= 0 || !categoryId) {
+                showCustomAlert("خطأ", "الرجاء إدخال اسم ومبلغ صحيح وتحديد فئة للمصروف.");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/expenses`), {
+                    name,
+                    amount,
+                    categoryId,
+                    date: getTodayDateString(),
+                    monthYear: getMonthYearString(),
+                    timestamp: new Date() // Firebase Timestamp
+                });
+                hideExpenseModal();
+                showCustomAlert("نجاح", "تم إضافة المصروف بنجاح!");
+                expenseNameInput.value = '';
+                expenseAmountInput.value = '';
+                expenseCategorySelect.value = '';
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showCustomAlert("خطأ", "فشل إضافة المصروف.");
+            }
+        }
+
+        async function deleteExpense(id) {
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/expenses`, id));
+                showCustomAlert("نجاح", "تم حذف المصروف بنجاح!");
+            } catch (e) {
+                console.error("Error deleting document: ", e);
+                showCustomAlert("خطأ", "فشل حذف المصروف.");
+            }
+        }
+
+        async function addCategory() {
+            const name = newCategoryNameInput.value.trim();
+            const color = newCategoryColorInput.value;
+
+            if (!name) {
+                showCustomAlert("خطأ", "الرجاء إدخال اسم الفئة.");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/categories`), {
+                    name,
+                    color
+                });
+                showCustomAlert("نجاح", "تم إضافة الفئة بنجاح!");
+                newCategoryNameInput.value = '';
+                newCategoryColorInput.value = '#4f46e5'; // Reset to default indigo
+            } catch (e) {
+                console.error("Error adding category: ", e);
+                showCustomAlert("خطأ", "فشل إضافة الفئة.");
+            }
+        }
+
+        async function deleteCategory(id) {
+            try {
+                // Before deleting category, check if any expenses use it
+                const expensesQuery = query(
+                    collection(db, `artifacts/${appId}/users/${userId}/expenses`),
+                    where('categoryId', '==', id)
+                );
+                const expenseSnapshot = await getDocs(expensesQuery);
+
+                if (!expenseSnapshot.empty) {
+                    showCustomAlert("تحذير", "لا يمكن حذف هذه الفئة لأنها مرتبطة بمصروفات حالية. الرجاء حذف المصروفات أولاً أو تغيير فئاتها.");
+                    return;
+                }
+
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/categories`, id));
+                showCustomAlert("نجاح", "تم حذف الفئة بنجاح!");
+            } catch (e) {
+                console.error("Error deleting category: ", e);
+                showCustomAlert("خطأ", "فشل حذف الفئة.");
+            }
+        }
+
+        // --- Event Listeners ---
+        bottomNavItems.forEach(item => {
+            item.addEventListener('click', () => {
+                if (item.id === 'logout-btn') {
+                    // Handled by specific logout listener
+                    return;
+                }
+                const pageId = item.dataset.page;
+                if (pageId) {
+                    showPage(pageId);
+                }
+            });
+        });
+
+        addExpenseFab.addEventListener('click', showExpenseModal);
+        cancelExpenseBtn.addEventListener('click', hideExpenseModal);
+        saveExpenseBtn.addEventListener('click', addExpense);
+        addCategoryBtn.addEventListener('click', addCategory);
+
+        // Close modal on outside click
+        expenseModalOverlay.addEventListener('click', (e) => {
+            if (e.target === expenseModalOverlay) {
+                hideExpenseModal();
+            }
         });
     </script>
 </body>
 </html>
+
