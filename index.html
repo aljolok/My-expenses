@@ -5,126 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>المصروفات الذكية</title>
     <style>
-        :root { --c-primary: #4f46e5; --c-secondary: #f3f4f6; --c-text-primary: #111827; --c-text-secondary: #6b7280; --c-bg-primary: #ffffff; --c-bg-secondary: #f9fafb; --c-border: #e5e7eb; --c-success: #10b981; --c-danger: #ef4444; --grad-primary: linear-gradient(135deg, #6366f1, #4f46e5); --grad-fab: linear-gradient(45deg, #f43f5e, #f97316); --grad-bg: linear-gradient(135deg, #f9fafb, #e5e7eb); --space-sm: 0.5rem; --space-md: 1rem; --space-lg: 1.5rem; --fs-base: 1rem; --fs-lg: 1.125rem; --fs-2xl: 2rem; --radius-md: 0.75rem; --radius-lg: 1rem; --radius-full: 9999px; --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1); --transition: all 0.3s ease-in-out; }
-        [data-theme="dark"] { --c-primary: #6366f1; --c-secondary: #374151; --c-text-primary: #f9fafb; --c-text-secondary: #9ca3af; --c-bg-primary: #111827; --c-bg-secondary: #1f2937; --c-border: #374151; --grad-bg: linear-gradient(135deg, #1f2937, #111827); }
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Cairo', sans-serif; background: var(--grad-bg); color: var(--c-text-primary); }
-        #app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; background-color: var(--c-bg-primary); position: relative; overflow: hidden; box-shadow: 0 0 40px rgba(0,0,0,0.1); }
-        .screen { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--space-lg); }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; margin: 0; }
+        #app-container { max-width: 480px; margin: 0 auto; background-color: #fff; min-height: 100vh; }
+        .screen { width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
         .hidden { display: none !important; }
-        #main-app { justify-content: flex-start; padding: 0; }
-        .app-header { width: 100%; padding: var(--space-md); display: flex; justify-content: space-between; align-items: center; background-color: color-mix(in srgb, var(--c-bg-primary) 80%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--c-border); z-index: 10; flex-shrink: 0; }
-        #main-content { flex-grow: 1; width: 100%; overflow-y: auto; padding: var(--space-md); }
-        .app-nav { display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; width: 100%; background-color: var(--c-bg-primary); border-top: 1px solid var(--c-border); z-index: 10; box-shadow: 0 -5px 15px -3px rgba(0,0,0,0.05); }
-        .btn, .nav-btn { border: none; cursor: pointer; font-family: inherit; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); transition: var(--transition); border-radius: var(--radius-md); }
-        .btn-primary { background: var(--grad-primary); color: #ffffff; box-shadow: var(--shadow-md); padding: var(--space-sm) var(--space-md); }
-        .btn-secondary { background-color: var(--c-secondary); color: var(--c-text-primary); padding: var(--space-sm) var(--space-md); }
-        .nav-btn { flex-direction: column; gap: .25rem; font-size: var(--fs-sm); color: var(--c-text-secondary); background: transparent; padding: var(--space-sm) 0; height: 100%; }
-        .nav-btn.active { color: var(--c-primary); }
-        .nav-fab { width: 60px; height: 60px; border-radius: var(--radius-full); background: var(--grad-fab); color: #ffffff; box-shadow: var(--shadow-lg); display: flex; align-items: center; justify-content: center; border: 4px solid var(--c-bg-primary); cursor: pointer; transform: translateY(-20px); z-index: 1; }
-        .auth-card { text-align: center; padding: calc(var(--space-lg) * 2); animation: fadeIn .5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .logo { width: 60px; height: 60px; background: var(--grad-primary); color: #ffffff; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-md); }
-        .auth-buttons { display: flex; flex-direction: column; gap: var(--space-md); margin-top: var(--space-lg); }
-        .user-profile { display: flex; align-items: center; gap: var(--space-md); }
-        #user-avatar { width: 40px; height: 40px; border-radius: var(--radius-full); object-fit: cover; background-color: var(--c-secondary); border: 2px solid var(--c-primary); }
-        .page { display: flex; flex-direction: column; gap: var(--space-md); animation: fadeIn .5s; width: 100%; }
-        .card { background-color: var(--c-bg-primary); padding: var(--space-md); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--c-border); }
-        .card h3 { font-size: var(--fs-lg); margin-bottom: var(--space-md); display: flex; align-items: center; gap: var(--space-sm); }
-        .item-list { display: flex; flex-direction: column; gap: var(--space-sm); }
-        .expense-item { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: var(--space-md); padding: var(--space-sm); border-radius: var(--radius-md); }
-        .item-icon { width: 40px; height: 40px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; color: #ffffff; flex-shrink: 0; }
-        .item-details { flex-grow: 1; } .item-name { font-weight: 600; } .item-category { font-size: var(--fs-sm); color: var(--c-text-secondary); } .item-amount { font-weight: 700; }
-        .spinner { width: 40px; height: 40px; border: 4px solid var(--c-secondary); border-top-color: var(--c-primary); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .empty-state { text-align: center; color: var(--c-text-secondary); padding: calc(var(--space-lg) * 2) 0; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; border: 1px solid #ccc; border-radius: 5px; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div id="app-container"></div>
+    <div id="app-container">
+        <!-- Content will be rendered here -->
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const appContainer = document.getElementById('app-container');
-            let app, auth, db;
-            const state = { user: null, expenses: [], categories: [], currentPage: 'daily' };
-            
-            function render() {
-                appContainer.innerHTML = '';
-                let screenNode;
-                if (!state.user) {
-                    screenNode = new DOMParser().parseFromString(createAuthScreen(), 'text/html').body.firstChild;
+        // --- The Simplest Possible Working Code ---
+
+        const appContainer = document.getElementById('app-container');
+
+        // Initial loading state
+        appContainer.innerHTML = `<div class="screen" id="loading-screen"><div class="spinner"></div><p>جاري التحقق...</p></div>`;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ",
+            authDomain: "my-expenses-81714.firebaseapp.com",
+            projectId: "my-expenses-81714",
+            storageBucket: "my-expenses-81714.firebasestorage.app",
+            messagingSenderId: "672207051964",
+            appId: "1:672207051964:web:b6e0cedc143bd06fd584b9",
+        };
+
+        try {
+            // Initialize Firebase
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+
+            // Auth state listener
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    // User is signed in
+                    appContainer.innerHTML = `
+                        <div class="screen" id="main-app">
+                            <h1>أهلاً بك، ${user.displayName || 'مستخدم'}!</h1>
+                            <p>لقد نجحت في تسجيل الدخول.</p>
+                            <button id="logout-btn">تسجيل الخروج</button>
+                        </div>
+                    `;
+                    document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
                 } else {
-                    screenNode = new DOMParser().parseFromString(createMainAppShell(state), 'text/html').body.firstChild;
-                    renderPageContent(screenNode.querySelector('#main-content'), state);
-                }
-                appContainer.appendChild(screenNode);
-                lucide.createIcons();
-                setupEventListeners();
-            }
-
-            function setState(newState) { Object.assign(state, newState); render(); }
-            
-            function createAuthScreen() { return `<div class="screen active" id="auth-screen"><div class="auth-card"><div class="logo"><i data-lucide="wallet"></i></div><h1>المصروفات الذكية</h1><p>تتبع نفقاتك بسهولة وأناقة.</p><div class="auth-buttons"><button id="google-signin-btn" class="btn btn-primary"><i data-lucide="log-in"></i><span>تسجيل الدخول بـ Google</span></button><button id="anon-signin-btn" class="btn btn-secondary"><i data-lucide="user-x"></i><span>التصفح كمجهول</span></button></div></div></div>`; }
-            function createMainAppShell({ user, currentPage }) {
-                const defaultAvatar = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xOCAyMHYtMWMwLTIuMi0xLjgtNC00LTRoLTRjLTIuMiAwLTQgMS44LTQgNHYxIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSI3IiByPSI0Ii8+PC9zdmc+";
-                return `<div class="screen active" id="main-app"><header class="app-header"><div class="user-profile"><img src="${user.photoURL || defaultAvatar}"><div><h2>${user.isAnonymous ? 'مستخدم مجهول' : (user.displayName || 'مستخدم جديد')}</h2></div></div></header><main id="main-content"></main><nav class="app-nav"><button class="nav-btn ${currentPage === 'daily' ? 'active' : ''}" data-page="daily"><i data-lucide="calendar-day"></i><span>يومي</span></button><button class="nav-btn ${currentPage === 'monthly' ? 'active' : ''}" data-page="monthly"><i data-lucide="bar-chart-3"></i><span>شهري</span></button><button id="fab-add-expense" class="nav-fab"><i data-lucide="plus"></i></button><button class="nav-btn ${currentPage === 'categories' ? 'active' : ''}" data-page="categories"><i data-lucide="tags"></i><span>فئات</span></button><button id="logout-btn" class="nav-btn"><i data-lucide="log-out"></i><span>خروج</span></button></nav></div>`;
-            }
-
-            function renderPageContent(mainContent, { currentPage, expenses, categories }) {
-                mainContent.innerHTML = '';
-                let pageHTML = '';
-                if (currentPage === 'daily') {
-                    const today = new Date().toISOString().slice(0, 10);
-                    const dailyExpenses = expenses.filter(e => e.date === today);
-                    const total = dailyExpenses.reduce((sum, e) => sum + e.amount, 0);
-                    const expensesHTML = dailyExpenses.length > 0 ? dailyExpenses.map(exp => `<div class="expense-item"><div class="item-icon" style="background-color: ${(categories.find(c=>c.id===exp.categoryId) || {}).color || '#ccc'};"><i data-lucide="tag"></i></div><div class="item-details"><p class="item-name">${exp.name}</p><p class="item-category">${(categories.find(c=>c.id===exp.categoryId) || {}).name || 'غير محدد'}</p></div><p class="item-amount">${new Intl.NumberFormat('ar-AE', { style: 'currency', currency: 'AED' }).format(exp.amount)}</p></div>`).join('') : `<p class="empty-state">لا توجد مصروفات مسجلة اليوم.</p>`;
-                    pageHTML = `<div class="page"><div class="card"><h3><i data-lucide="sun"></i>مصروفات اليوم</h3><p class="amount">${new Intl.NumberFormat('ar-AE', { style: 'currency', currency: 'AED' }).format(total)}</p></div><div class="item-list">${expensesHTML}</div></div>`;
-                } else {
-                    pageHTML = `<div class="page"><div class="card"><p class="empty-state">صفحة ${currentPage} (قيد الإنشاء)</p></div></div>`;
-                }
-                mainContent.innerHTML = pageHTML;
-            }
-            
-            function setupEventListeners() {
-                appContainer.addEventListener('click', e => {
-                    const targetBtn = e.target.closest('button');
-                    if (!targetBtn) return;
-                    
-                    if (targetBtn.id === 'google-signin-btn') auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-                    else if (targetBtn.id === 'anon-signin-btn') auth.signInAnonymously();
-                    else if (targetBtn.id === 'logout-btn') auth.signOut();
-                    else if (targetBtn.dataset.page) setState({ currentPage: targetBtn.dataset.page });
-                });
-            }
-            
-            function init() {
-                appContainer.innerHTML = `<div class="screen active"><div class="spinner"></div><p>جاري التحميل...</p></div>`;
-                const firebaseConfig = { apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ", authDomain: "my-expenses-81714.firebaseapp.com", projectId: "my-expenses-81714", storageBucket: "my-expenses-81714.firebasestorage.app", messagingSenderId: "672207051964", appId: "1:672207051964:web:b6e0cedc143bd06fd584b9" };
-                
-                try {
-                    app = firebase.initializeApp(firebaseConfig);
-                    auth = firebase.auth();
-                    db = firebase.firestore();
-
-                    auth.onAuthStateChanged(user => {
-                        if (state.unsubscribe.length > 0) state.unsubscribe.forEach(unsub => unsub());
-                        
-                        if (user) {
-                            const unsubExpenses = db.collection('users').doc(user.uid).collection('expenses').orderBy('createdAt', 'desc').onSnapshot(snap => setState({ expenses: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
-                            const unsubCategories = db.collection('users').doc(user.uid).collection('categories').onSnapshot(snap => setState({ categories: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
-                            state.unsubscribe = [unsubExpenses, unsubCategories];
-                            setState({ user });
-                        } else {
-                            setState({ user: null, expenses: [], categories: [] });
-                        }
+                    // User is signed out
+                    appContainer.innerHTML = `
+                        <div class="screen" id="auth-screen">
+                            <h1>المصروفات الذكية</h1>
+                            <p>يرجى تسجيل الدخول للمتابعة.</p>
+                            <button id="signin-btn">تسجيل الدخول بـ Google</button>
+                        </div>
+                    `;
+                    document.getElementById('signin-btn').addEventListener('click', () => {
+                        const provider = new firebase.auth.GoogleAuthProvider();
+                        auth.signInWithPopup(provider);
                     });
-                } catch (e) { appContainer.innerHTML = `<div class="screen active"><p>حدث خطأ فادح.</p></div>`; console.error(e); }
-            }
-            init();
-        });
+                }
+            });
+
+        } catch (error) {
+            appContainer.innerHTML = `<div class="screen"><p>حدث خطأ فادح: ${error.message}</p></div>`;
+            console.error("CRITICAL ERROR:", error);
+        }
     </script>
 </body>
 </html>
