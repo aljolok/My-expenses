@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl"> <!-- Added dir="rtl" for right-to-left -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -53,8 +53,8 @@
             content: '';
             position: absolute;
             top: -4px; /* Position above the icon */
-            left: 50%;
-            transform: translateX(-50%);
+            right: 50%; /* Changed to right for RTL */
+            transform: translateX(50%); /* Changed to translateX(50%) for RTL */
             width: 30px;
             height: 4px;
             background-color: #4f46e5; /* Indigo-600 */
@@ -132,7 +132,7 @@
             border-radius: 50%;
             display: inline-block;
             vertical-align: middle;
-            margin-left: 8px;
+            margin-right: 8px; /* Changed to margin-right for RTL */
             border: 1px solid #ccc; /* Add a slight border for visibility */
         }
 
@@ -197,7 +197,7 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
         .google-auth-btn i {
-            margin-right: 10px;
+            margin-left: 10px; /* Changed to margin-left for RTL */
         }
         .anonymous-auth-btn {
             background-color: #6b7280; /* Gray-500 */
@@ -224,12 +224,12 @@
             <p class="text-gray-600 mb-8">يرجى تسجيل الدخول للمتابعة.</p>
 
             <button id="google-signin-btn" class="auth-button google-auth-btn">
-                <i class="fab fa-google text-blue-500"></i>
                 <span>تسجيل الدخول باستخدام جوجل</span>
+                <i class="fab fa-google text-blue-500"></i>
             </button>
             <button id="anonymous-signin-btn" class="auth-button anonymous-auth-btn">
-                <i class="fas fa-user-secret"></i>
                 <span>التصفح كمجهول</span>
+                <i class="fas fa-user-secret"></i>
             </button>
         </div>
     </div>
@@ -279,11 +279,11 @@
                     <h3 class="text-lg font-semibold text-gray-800 mb-3">إضافة فئة جديدة:</h3>
                     <input type="text" id="new-category-name" placeholder="اسم الفئة" class="w-full p-3 border border-gray-300 rounded-md mb-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent" />
                     <div class="flex items-center mb-4">
-                        <label for="new-category-color" class="mr-3 text-gray-700">لون الفئة:</label>
+                        <label for="new-category-color" class="ml-3 text-gray-700">لون الفئة:</label> <!-- Changed margin for RTL -->
                         <input type="color" id="new-category-color" value="#4f46e5" class="w-10 h-10 p-1 border border-gray-300 rounded-full cursor-pointer" />
                     </div>
                     <button id="add-category-btn" class="w-full bg-indigo-500 text-white p-3 rounded-md font-semibold hover:bg-indigo-600 transition duration-200">
-                        <i class="fas fa-plus mr-2"></i>إضافة فئة
+                        إضافة فئة<i class="fas fa-plus mr-2"></i> <!-- Moved icon for RTL -->
                     </button>
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow-md">
@@ -332,10 +332,10 @@
                     <!-- Categories will be dynamically loaded here -->
                 </select>
                 <button id="save-expense-btn" class="w-full bg-indigo-500 text-white p-3 rounded-md font-semibold hover:bg-indigo-600 transition duration-200">
-                    <i class="fas fa-check mr-2"></i>حفظ المصروف
+                    حفظ المصروف<i class="fas fa-check mr-2"></i> <!-- Moved icon for RTL -->
                 </button>
                 <button id="cancel-expense-btn" class="w-full bg-gray-300 text-gray-800 p-3 rounded-md font-semibold mt-2 hover:bg-gray-400 transition duration-200">
-                    <i class="fas fa-times mr-2"></i>إلغاء
+                    إلغاء<i class="fas fa-times mr-2"></i> <!-- Moved icon for RTL -->
                 </button>
             </div>
         </div>
@@ -351,23 +351,58 @@
 
     </div>
 
-    <!-- Firebase SDKs (v9.6.0 for broad compatibility) -->
+    <!-- Firebase SDKs (v11.6.1) -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, signOut, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, signOut, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables for Firebase (MUST be used as provided by the environment)
+        // --- Firebase Global Variables (MUST BE USED) ---
+        // These variables are provided by the Canvas environment.
+        // We ensure they are defined, though the environment typically guarantees it.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        let firebaseConfig = {};
+        try {
+            // Attempt to parse the __firebase_config string provided by the environment
+            if (typeof __firebase_config !== 'undefined' && __firebase_config !== null && __firebase_config !== '') {
+                firebaseConfig = JSON.parse(__firebase_config);
+            } else {
+                console.warn("Environment variable __firebase_config is undefined, null, or empty.");
+                // Fallback to the user's provided config for debugging if environment variable is missing
+                // In a real Canvas environment, __firebase_config should always be provided.
+                firebaseConfig = {
+                    apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ",
+                    authDomain: "my-expenses-81714.firebaseapp.com",
+                    projectId: "my-expenses-81714",
+                    storageBucket: "my-expenses-81714.firebasestorage.app",
+                    messagingSenderId: "672207051964",
+                    appId: "1:672207051964:web:b6e0cedc143bd06fd584b9",
+                    measurementId: "G-YBTY3QD4YQ"
+                };
+            }
+        } catch (e) {
+            console.error("Error parsing __firebase_config from environment:", e);
+            // Fallback to the user's provided config if parsing fails
+            firebaseConfig = {
+                apiKey: "AIzaSyCD6TOeIO7g6RGp89YtA1maduwMfyTE1VQ",
+                authDomain: "my-expenses-81714.firebaseapp.com",
+                projectId: "my-expenses-81714.firebaseapp.com", // Corrected authDomain to match project ID
+                storageBucket: "my-expenses-81714.firebasestorage.app",
+                messagingSenderId: "672207051964",
+                appId: "1:672207051964:web:b6e0cedc143bd06fd584b9",
+                measurementId: "G-YBTY3QD4YQ"
+            };
+            showCustomAlert("خطأ في التهيئة", "فشل تحميل إعدادات Firebase. يرجى تحديث الصفحة.");
+        }
 
-        // Initialize Firebase
+
+        // Initialize Firebase App
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
         let userId = null;
-        let isAuthReady = false; // Flag to ensure auth state is checked once before loading data
+        let authStateChecked = false; // Flag to ensure auth state is processed once initially
 
         // --- UI Element References ---
         const loadingScreen = document.getElementById('loading-screen');
@@ -413,7 +448,7 @@
 
         let allCategories = []; // To store categories for dropdowns and display
 
-        // --- Custom Alert Function (replaces alert()) ---
+        // --- Custom Alert Function (replaces alert() and confirm()) ---
         function showCustomAlert(title, message) {
             alertTitle.textContent = title;
             alertMessage.textContent = message;
@@ -427,15 +462,16 @@
         // --- Utility Functions ---
         function getTodayDateString() {
             const now = new Date();
-            return now.toISOString().split('T')[0]; // YYYY-MM-DD
+            return now.toISOString().split('T')[0]; // Format: YYYY-MM-DD
         }
 
         function getMonthYearString(date = new Date()) {
-            return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`; // YYYY-MM
+            return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`; // Format: YYYY-MM
         }
 
         function formatCurrency(amount) {
-            return `${amount.toFixed(2)} ر.س`; // Saudi Riyal currency format
+            // Using Intl.NumberFormat for better currency formatting
+            return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount);
         }
 
         function formatTimestamp(timestamp) {
@@ -449,7 +485,7 @@
             });
         }
 
-        // --- UI State Management ---
+        // --- UI Screen Management ---
         function showScreen(screenId) {
             loadingScreen.classList.add('hidden');
             loginScreen.classList.add('hidden');
@@ -462,6 +498,7 @@
             } else if (screenId === 'main') {
                 mainApp.classList.remove('hidden');
             }
+            console.log(`Switched to screen: ${screenId}`);
         }
 
         function showPage(pageId) {
@@ -495,8 +532,8 @@
                 }
             });
 
-            // Reload data for the active page
-            if (isAuthReady && userId) {
+            // Reload data for the active page if authenticated
+            if (userId && authStateChecked) {
                 switch (pageId) {
                     case 'daily-view':
                         loadDailyExpenses();
@@ -509,18 +546,27 @@
                         break;
                 }
             }
+            console.log(`Switched to page: ${pageId}`);
         }
 
         function showExpenseModal() {
             expenseModalOverlay.classList.remove('hidden');
             // Populate category dropdown
             expenseCategorySelect.innerHTML = '<option value="" disabled selected>اختر فئة</option>';
-            allCategories.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat.id;
-                option.textContent = cat.name;
-                expenseCategorySelect.appendChild(option);
-            });
+            if (allCategories.length > 0) {
+                allCategories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.id;
+                    option.textContent = cat.name;
+                    expenseCategorySelect.appendChild(option);
+                });
+            } else {
+                 const option = document.createElement('option');
+                 option.value = "";
+                 option.textContent = "لا توجد فئات متاحة";
+                 option.disabled = true;
+                 expenseCategorySelect.appendChild(option);
+            }
             expenseNameInput.value = '';
             expenseAmountInput.value = '';
         }
@@ -529,87 +575,100 @@
             expenseModalOverlay.classList.add('hidden');
         }
 
-        // --- Authentication ---
-        // Initial sign-in or check authentication state on load
-        window.onload = async () => {
-            showScreen('loading');
-            try {
-                // Try to sign in with custom token if provided (from Canvas environment)
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                    console.log("Signed in with custom token.");
-                } else {
-                    // If no custom token, sign in anonymously for a seamless start
-                    await signInAnonymously(auth);
-                    console.log("Signed in anonymously.");
-                }
-            } catch (error) {
-                console.error("Firebase initial sign-in error:", error);
-                showCustomAlert("خطأ في المصادقة", "حدث خطأ أثناء محاولة تسجيل الدخول الأولي. يرجى المحاولة مرة أخرى.");
-                showScreen('login'); // Show login screen on error
-            }
-        };
+        // --- Authentication Logic ---
 
-        // Auth state observer (runs whenever auth state changes)
+        // This listener is the central point for managing UI based on auth state.
         onAuthStateChanged(auth, async (user) => {
+            console.log("onAuthStateChanged fired. User:", user ? user.uid : "null");
             if (user) {
                 userId = user.uid;
-                userIdDisplay.textContent = `معرف المستخدم: ${userId}`;
+                userIdDisplay.textContent = `معرف المستخدم: ${userId.substring(0, 8)}...`; // Display partial ID
                 showScreen('main');
-                if (!isAuthReady) { // Only load data once after initial auth check
+                if (!authStateChecked) { // Only load data and set default page once after initial auth
                     showPage('daily-view'); // Default view
-                    loadCategories(); // Load categories for dropdown and categories page
-                    loadDailyExpenses(); // Load daily expenses for daily page
-                    loadMonthlySummary(); // Load monthly summary for monthly page
-                    isAuthReady = true;
-                } else {
-                     // If auth state changes after initial load (e.g., user logs out then logs back in)
-                     // Ensure correct page is displayed and data is refreshed
-                     const currentPage = document.querySelector('.bottom-nav-item.active').dataset.page;
-                     showPage(currentPage);
+                    // Load all necessary data streams immediately after a successful initial login/auth check
+                    loadCategories();
+                    loadDailyExpenses();
+                    loadMonthlySummary();
+                    authStateChecked = true;
                 }
             } else {
                 userId = null;
                 userIdDisplay.textContent = '';
                 showScreen('login');
-                isAuthReady = true; // Mark as ready even if no user, so subsequent actions don't wait indefinitely
+                authStateChecked = true; // Mark as checked even if no user, to avoid infinite loading
             }
-            loadingScreen.classList.add('hidden'); // Hide loading screen once auth check is done
+            // Always hide loading screen once auth state is determined
+            loadingScreen.classList.add('hidden');
         });
+
+        // Event listener for DOMContentLoaded to initiate Firebase auth check early
+        document.addEventListener('DOMContentLoaded', async () => {
+            showScreen('loading');
+            console.log("DOMContentLoaded: Initiating Firebase auth check.");
+            try {
+                // Check if __initial_auth_token is provided by the Canvas environment
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    console.log("Attempting sign-in with custom token...");
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    console.log("Custom token not provided. Attempting anonymous sign-in...");
+                    await signInAnonymously(auth);
+                }
+                // onAuthStateChanged will handle the screen transition after sign-in attempt resolves
+            } catch (error) {
+                console.error("Initial Firebase sign-in failed:", error);
+                showCustomAlert("خطأ في المصادقة", "فشل تسجيل الدخول الأولي. يرجى المحاولة مرة أخرى.");
+                showScreen('login'); // Show login screen if initial sign-in fails
+            }
+        });
+
 
         googleSignInBtn.addEventListener('click', async () => {
             showScreen('loading');
+            console.log("Google sign-in button clicked.");
             const provider = new GoogleAuthProvider();
             try {
                 await signInWithPopup(auth, provider);
                 console.log("Google Sign-in successful.");
+                // onAuthStateChanged will handle the UI update
             } catch (error) {
                 console.error("Google Sign-in error:", error);
-                showCustomAlert("خطأ في تسجيل الدخول بجوجل", `حدث خطأ: ${error.message}`);
+                let errorMessage = "حدث خطأ أثناء تسجيل الدخول باستخدام جوجل.";
+                if (error.code === 'auth/popup-closed-by-user') {
+                    errorMessage = "تم إغلاق نافذة تسجيل الدخول.";
+                } else if (error.message) {
+                    errorMessage += ` التفاصيل: ${error.message}`;
+                }
+                showCustomAlert("خطأ في تسجيل الدخول", errorMessage);
                 showScreen('login');
             }
         });
 
         anonymousSignInBtn.addEventListener('click', async () => {
             showScreen('loading');
+            console.log("Anonymous sign-in button clicked.");
             try {
                 await signInAnonymously(auth);
                 console.log("Anonymous Sign-in successful.");
+                // onAuthStateChanged will handle the UI update
             } catch (error) {
                 console.error("Anonymous Sign-in error:", error);
-                showCustomAlert("خطأ في تسجيل الدخول كمجهول", `حدث خطأ: ${error.message}`);
+                showCustomAlert("خطأ في تسجيل الدخول", `فشل تسجيل الدخول كمجهول: ${error.message}`);
                 showScreen('login');
             }
         });
 
         logoutBtn.addEventListener('click', async () => {
             showScreen('loading');
+            console.log("Logout button clicked.");
             try {
                 await signOut(auth);
                 console.log("Signed out successfully.");
+                // onAuthStateChanged will handle the UI update to login screen
             } catch (error) {
                 console.error("Logout error:", error);
-                showCustomAlert("خطأ في تسجيل الخروج", `حدث خطأ: ${error.message}`);
+                showCustomAlert("خطأ في تسجيل الخروج", `فشل تسجيل الخروج: ${error.message}`);
                 showScreen('main'); // Stay on main if logout fails
             }
         });
@@ -617,54 +676,60 @@
         // --- Firestore Operations (Data Handling) ---
 
         // Listener for Categories (used across app for dropdowns and categories page)
+        // This function sets up a real-time listener.
         function loadCategories() {
-            if (!userId) return;
-            const q = query(collection(db, `artifacts/${appId}/users/${userId}/categories`));
-            onSnapshot(q, (snapshot) => {
+            if (!userId) {
+                console.warn("loadCategories called without userId. Skipping.");
+                return;
+            }
+            const categoriesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/categories`);
+            onSnapshot(categoriesCollectionRef, (snapshot) => {
                 allCategories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderCategories(allCategories);
-                console.log("Categories updated:", allCategories);
+                console.log("Categories updated from Firestore:", allCategories);
             }, (error) => {
-                console.error("Error loading categories:", error);
-                showCustomAlert("خطأ", "فشل تحميل الفئات.");
+                console.error("Error loading categories from Firestore:", error);
+                showCustomAlert("خطأ", "فشل تحميل الفئات. يرجى التحقق من اتصالك بالإنترنت وقواعد Firebase.");
             });
         }
 
         // Listener for Daily Expenses
         function loadDailyExpenses() {
-            if (!userId) return;
+            if (!userId) {
+                console.warn("loadDailyExpenses called without userId. Skipping.");
+                return;
+            }
             const today = getTodayDateString();
-            const q = query(
-                collection(db, `artifacts/${appId}/users/${userId}/expenses`),
-                where('date', '==', today)
-            );
+            const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
+            const q = query(expensesCollectionRef, where('date', '==', today));
             onSnapshot(q, (snapshot) => {
                 const expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderExpenses(expenses);
                 updateDailyTotal(expenses);
-                console.log("Daily expenses updated:", expenses);
+                console.log("Daily expenses updated from Firestore:", expenses);
             }, (error) => {
-                console.error("Error loading daily expenses:", error);
-                showCustomAlert("خطأ", "فشل تحميل المصروفات اليومية.");
+                console.error("Error loading daily expenses from Firestore:", error);
+                showCustomAlert("خطأ", "فشل تحميل المصروفات اليومية. يرجى التحقق من اتصالك بالإنترنت وقواعد Firebase.");
             });
         }
 
         // Listener for Monthly Summary
         function loadMonthlySummary() {
-            if (!userId) return;
+            if (!userId) {
+                console.warn("loadMonthlySummary called without userId. Skipping.");
+                return;
+            }
             const currentMonthYear = getMonthYearString();
-            const q = query(
-                collection(db, `artifacts/${appId}/users/${userId}/expenses`),
-                where('monthYear', '==', currentMonthYear)
-            );
+            const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
+            const q = query(expensesCollectionRef, where('monthYear', '==', currentMonthYear));
             onSnapshot(q, (snapshot) => {
                 const expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 updateMonthlyTotal(expenses);
                 renderMonthlyCategorySummary(expenses);
-                console.log("Monthly expenses updated:", expenses);
+                console.log("Monthly expenses updated from Firestore:", expenses);
             }, (error) => {
-                console.error("Error loading monthly summary:", error);
-                showCustomAlert("خطأ", "فشل تحميل ملخص المصروفات الشهرية.");
+                console.error("Error loading monthly summary from Firestore:", error);
+                showCustomAlert("خطأ", "فشل تحميل ملخص المصروفات الشهرية. يرجى التحقق من اتصالك بالإنترنت وقواعد Firebase.");
             });
         }
 
@@ -684,17 +749,17 @@
                     const expenseItem = document.createElement('div');
                     expenseItem.className = 'expense-item flex items-center justify-between bg-white p-3 rounded-lg shadow-sm';
                     expenseItem.innerHTML = `
-                        <div class="flex flex-col flex-grow">
+                        <div class="flex flex-col flex-grow text-right"> <!-- Added text-right for RTL -->
                             <span class="font-medium text-gray-800">${expense.name}</span>
-                            <span class="text-sm text-gray-600 flex items-center">
+                            <span class="text-sm text-gray-600 flex items-center justify-end"> <!-- Added justify-end for RTL -->
+                                <span class="color-dot ml-2" style="background-color: ${categoryColor};"></span> <!-- Changed margin for RTL -->
                                 ${categoryName}
-                                <span class="color-dot mr-2" style="background-color: ${categoryColor};"></span>
                             </span>
                             <span class="text-xs text-gray-500">${formatTimestamp(expense.timestamp)}</span>
                         </div>
                         <div class="flex items-center">
-                            <span class="text-lg font-bold text-indigo-600 ml-4">${formatCurrency(expense.amount)}</span>
-                            <button class="delete-btn bg-red-500 hover:bg-red-600 text-white p-2 rounded-md ml-2" data-id="${expense.id}">
+                            <span class="text-lg font-bold text-indigo-600 mr-4">${formatCurrency(expense.amount)}</span> <!-- Changed margin for RTL -->
+                            <button class="delete-btn bg-red-500 hover:bg-red-600 text-white p-2 rounded-md mr-2" data-id="${expense.id}"> <!-- Changed margin for RTL -->
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
@@ -751,8 +816,8 @@
                 item.className = 'flex justify-between items-center bg-gray-50 p-2 rounded-md';
                 item.innerHTML = `
                     <div class="flex items-center">
-                        <span class="color-dot mr-2" style="background-color: ${data.color};"></span>
-                        <span class="text-gray-700">${name}</span>
+                        ${name}
+                        <span class="color-dot ml-2" style="background-color: ${data.color};"></span> <!-- Changed margin for RTL -->
                     </div>
                     <span class="font-medium text-gray-800">${formatCurrency(data.total)}</span>
                 `;
@@ -771,7 +836,7 @@
                     categoryItem.className = 'category-item flex items-center justify-between bg-white p-3 rounded-lg shadow-sm';
                     categoryItem.innerHTML = `
                         <div class="flex items-center">
-                            <span class="color-dot mr-2" style="background-color: ${category.color};"></span>
+                            <span class="color-dot ml-2" style="background-color: ${category.color};"></span> <!-- Changed margin for RTL -->
                             <span class="font-medium text-gray-800">${category.name}</span>
                         </div>
                         <button class="delete-btn bg-red-500 hover:bg-red-600 text-white p-2 rounded-md" data-id="${category.id}">
@@ -819,8 +884,8 @@
                 expenseAmountInput.value = '';
                 expenseCategorySelect.value = '';
             } catch (e) {
-                console.error("Error adding document: ", e);
-                showCustomAlert("خطأ", "فشل إضافة المصروف.");
+                console.error("Error adding expense document: ", e);
+                showCustomAlert("خطأ", `فشل إضافة المصروف: ${e.message}`);
             }
         }
 
@@ -829,8 +894,8 @@
                 await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/expenses`, id));
                 showCustomAlert("نجاح", "تم حذف المصروف بنجاح!");
             } catch (e) {
-                console.error("Error deleting document: ", e);
-                showCustomAlert("خطأ", "فشل حذف المصروف.");
+                console.error("Error deleting expense document: ", e);
+                showCustomAlert("خطأ", `فشل حذف المصروف: ${e.message}`);
             }
         }
 
@@ -853,7 +918,7 @@
                 newCategoryColorInput.value = '#4f46e5'; // Reset to default indigo
             } catch (e) {
                 console.error("Error adding category: ", e);
-                showCustomAlert("خطأ", "فشل إضافة الفئة.");
+                showCustomAlert("خطأ", `فشل إضافة الفئة: ${e.message}`);
             }
         }
 
@@ -875,7 +940,7 @@
                 showCustomAlert("نجاح", "تم حذف الفئة بنجاح!");
             } catch (e) {
                 console.error("Error deleting category: ", e);
-                showCustomAlert("خطأ", "فشل حذف الفئة.");
+                showCustomAlert("خطأ", `فشل حذف الفئة: ${e.message}`);
             }
         }
 
@@ -883,7 +948,7 @@
         bottomNavItems.forEach(item => {
             item.addEventListener('click', () => {
                 if (item.id === 'logout-btn') {
-                    // Handled by specific logout listener
+                    // Logout handled by its specific listener
                     return;
                 }
                 const pageId = item.dataset.page;
